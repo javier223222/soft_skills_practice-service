@@ -4,11 +4,11 @@ from typing import Optional
 
 class AppConfig(BaseSettings):
     # Gemini AI Configuration
-    gemini_api_key: str="AIzaSyBHWlUQOpHU63nZg9hZPbGJCl_UlUQ8JMc"
+    gemini_api_key: str=""
     gemini_model: str = "gemini-1.5-flash"
     
     # MongoDB Configuration
-    mongodb_url: str = "mongodb://admin:password123@localhost:27017/soft_skills_practice?authSource=admin"
+    mongodb_url: str = ""
     mongodb_db_name: str = "soft_skills_practice"
     
     # Redis Configuration
