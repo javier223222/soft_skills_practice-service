@@ -1,0 +1,56 @@
+# Multi-stage build para optimizar el tamaño de la imagen
+FROM python:3.11-slim AS builder
+
+# Instalar dependencias del sistema para compilación
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copiar requirements y instalar dependencias
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Etapa de producción
+FROM python:3.11-slim AS production
+
+# Crear usuario no-root para seguridad
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Instalar dependencias del sistema de runtime
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar dependencias instaladas desde el builder
+COPY --from=builder /root/.local /home/appuser/.local
+
+# Copiar código fuente
+COPY . .
+
+# Crear directorio para logs
+RUN mkdir -p /app/logs
+
+# Cambiar permisos
+RUN chown -R appuser:appuser /app
+
+# Cambiar a usuario no-root
+USER appuser
+
+# Añadir el directorio local de Python al PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
+
+# Exponer puerto
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Comando optimizado para producción
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
