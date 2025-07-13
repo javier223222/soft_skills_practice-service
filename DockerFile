@@ -17,7 +17,9 @@ RUN apt-get update && apt-get install -y \
 # Copiar e instalar dependencias Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt || \
+    (grep -v "pywin32" requirements.txt > requirements-filtered.txt && \
+     pip install --no-cache-dir -r requirements-filtered.txt)
 
 # Copiar código fuente
 COPY src/ ./src/
@@ -31,9 +33,9 @@ USER appuser
 # Exponer puerto
 EXPOSE 8001
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8001/health || exit 1
+# Health check - verificar que la aplicación responde
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:8001/docs || curl -f http://localhost:8001/ || exit 1
 
-# Comando para ejecutar
+# Comando para ejecutar la aplicación
 CMD ["python", "run.py"]

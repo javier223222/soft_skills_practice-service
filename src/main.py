@@ -1,11 +1,11 @@
-import asyncio
+
 from fastapi import FastAPI, HTTPException,Request
 from contextlib import asynccontextmanager
-import os
+
 from dotenv import load_dotenv
 
 from app.soft_skills_practice.infrastructure.persistence.database import db_connection
-from app.soft_skills_practice.infrastructure.messaging.message_queue_service import message_queue_service
+
 
 from app.soft_skills_practice.application.use_cases.get_paginated_user_skills_use_case import GetPaginatedUserSkillsUseCase
 from app.soft_skills_practice.application.use_cases.get_paginated_scenarios_by_skill_use_case import GetPaginatedScenariosBySkillUseCase
@@ -42,12 +42,7 @@ async def lifespan(app: FastAPI):
     await db_connection.connect()
     print("✅ Conexión a MongoDB establecida")
     
-    try:
-        await message_queue_service.connect()
-        print("✅ Conexión a Redis (Message Queue) establecida")
-    except Exception as e:
-        print(f"⚠️  Advertencia: No se pudo conectar a Redis: {e}")
-        print("ℹ️  El servicio funcionará sin notificaciones automáticas")
+ 
     
     yield
     
@@ -55,8 +50,7 @@ async def lifespan(app: FastAPI):
     await db_connection.disconnect()
     print("❌ Conexión a MongoDB cerrada")
     
-    await message_queue_service.disconnect()
-    print("❌ Conexión a Redis cerrada")
+ 
 
 
 app = FastAPI(

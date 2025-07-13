@@ -25,7 +25,7 @@ from ...infrastructure.persistence.models.base_models import (
 from ..services.gemini_service import GeminiService
 from ..services.user_mobile_service import UserMobileService
 from .generate_completion_feedback_use_case import GenerateCompletionFeedbackUseCase
-from ...infrastructure.notifications.points_notification_service import PointsNotificationService
+# from ...infrastructure.notifications.points_notification_service import PointsNotificationService
 
 
 class RespondSimulationUseCase:
