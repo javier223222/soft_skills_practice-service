@@ -27,7 +27,7 @@ services:
       - ENVIRONMENT=${ENVIRONMENT}
       - DEBUG=${DEBUG}
       - LOG_LEVEL=${LOG_LEVEL}
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./src:/app/src  # Para desarrollo con hot-reload
     networks:
