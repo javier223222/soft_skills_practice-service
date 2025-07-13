@@ -1,9 +1,9 @@
 import asyncio
-from fastapi import FastAPI, HTTPException,Header,Request
+from fastapi import FastAPI, HTTPException,Request
 from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
-from typing import Annotated
+
 from app.soft_skills_practice.infrastructure.persistence.database import db_connection
 from app.soft_skills_practice.infrastructure.messaging.message_queue_service import message_queue_service
 
