@@ -254,7 +254,10 @@ async def start_softskill_simulation(request:StartSimulationRequestBySoftSkillDT
             simulation_step_repo,
             gemini_service
         )
-     return await start_simulation_use_case.execute(request)
+     simulation_response = await start_simulation_use_case.execute(request)
+     return simulation_response
+        
+    
     
         
      
@@ -266,7 +269,6 @@ async def start_softskill_simulation(request:StartSimulationRequestBySoftSkillDT
     
     
    
-    raise HTTPException(status_code=501, detail="Esta funcionalidad aún no está implementada")
 
 
 @app.post("/simulation/scenario/start")
@@ -306,24 +308,7 @@ async def start_simulation(request: StartSimulationRequestDTO):
         
         simulation_response = await start_simulation_use_case.execute(request)
         
-        return {
-            "success": True,
-            "session_id": simulation_response.session_id,
-            "user_id": simulation_response.user_id,
-            "scenario": simulation_response.scenario,
-            "initial_test": simulation_response.first_test,
-            "session_info": {
-                "session_id": simulation_response.session_info.session_id,
-                "skill_type": simulation_response.session_info.skill_type,
-                "status": simulation_response.session_info.status,
-                "current_step": simulation_response.session_info.current_step,
-                "total_steps": simulation_response.session_info.total_steps,
-                "difficulty_level": simulation_response.session_info.difficulty_level,
-                "started_at": simulation_response.session_info.started_at.isoformat()
-            },
-            "message": simulation_response.message,
-            "next_action": "complete_initial_test"
-        }
+        return simulation_response
         
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))

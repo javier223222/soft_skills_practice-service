@@ -64,27 +64,19 @@ La salida debe estar en el siguiente formato JSON, sin comentarios ni explicacio
   "title": "Título del escenario",
   "description": "Descripción general del contexto del escenario",
   "difficulty_level": {request.difficulty_preference},
-  "estimated_duration": Duración estimada en minutos (por ejemplo, 5),
+  "estimated_duration": Duración estimada en minutos ,
+  "steps":Numero de pasos de la simulación,
   "initial_situation": "Situación inicial que presenta el reto o dilema al usuario",
   "tags": ["etiquetas", "relacionadas", "a la habilidad"]
 }}
 
 Este escenario debe invitar a la reflexión, toma de decisiones o análisis, y enfocarse únicamente en poner a prueba la habilidad blanda: "{request.skill_type}".
+no debe durar mas de 15 minutos en completarse.
+
 """
             response = await self.gemini_service._generate_content(prompt)
             scenario_data = self.gemini_service._parse_scenario_response(response.content)
-            {
-        "skill_type": "decision_making",
-        "title": "Elegir Stack Tecnologico para MVP",
-        "description": "Decide el stack tecnologico para un MVP con timeline agresivo y equipo mixto junior/senior",
-        "difficulty_level": 4,
-        "estimated_duration": 30,
-        "initial_situation": "Tienes 3 meses para lanzar un MVP, equipo de 2 seniors y 3 juniors, y debes elegir entre React/Node.js, Angular/.NET o Vue/Python...",
-        "scenario_icon": "fas fa-code",
-        "scenario_color": "#FF9800",
-        "is_popular": True,
-        "tags": ["stack", "mvp", "timeline"]
-    }
+        
             scenario=await self.scenario_repository.create_scenario({
                 "skill_type": request.skill_type,
                 "title": scenario_data["title"],
@@ -92,6 +84,7 @@ Este escenario debe invitar a la reflexión, toma de decisiones o análisis, y e
                 "difficulty_level": scenario_data["difficulty_level"],
                 "estimated_duration": scenario_data["estimated_duration"],
                 "initial_situation": scenario_data["initial_situation"],
+                "steps": int(scenario_data["steps"]) if "steps" in scenario_data else 5,
                 
                 "scenario_icon": None,
                 "scenario_color":None,  
@@ -102,7 +95,7 @@ Este escenario debe invitar a la reflexión, toma de decisiones o análisis, y e
 
 
             })
-            print(f"Escenario creado con IA: {scenario.title}")
+            
 
 
             return scenario
@@ -137,7 +130,7 @@ Este escenario debe invitar a la reflexión, toma de decisiones o análisis, y e
             scenario_title=scenario.title,
             status=SimulationStatus.STARTED,
             current_step=1,
-            total_steps=5,  # Configurar según el escenario
+            total_steps= scenario.steps or 5,
             session_metadata=SessionMetadata(
                 difficulty_level=difficulty_level,
                 estimated_duration=scenario.estimated_duration,
@@ -161,6 +154,8 @@ CONTEXTO DEL ESCENARIO:
 - Descripción: {scenario.description}
 - Situación inicial: {scenario.initial_situation}
 - Nivel de dificultad: {scenario.difficulty_level}/5
+- Nivel de seniority del usuario: {request.seniority_level}
+- Especialización técnica del usuario: {request.tecnical_specialization}
 
 Genera un test inicial que:
 1. Evalúe el conocimiento previo del usuario sobre la habilidad en base a su area de especializacion tecnica que es "{request.tecnical_specialization}" y su seniority level "{request.seniority_level}"
@@ -225,3 +220,23 @@ La pregunta debe ser abierta y permitir evaluar la experiencia previa del usuari
        
         saved_step = await self.simulation_step_repository.create(step)
         return saved_step
+    def response(self,simulation_response):
+         return {
+            "success": True,
+            "session_id": simulation_response.session_id,
+            "user_id": simulation_response.user_id,
+            "scenario": simulation_response.scenario,
+            "initial_test": simulation_response.first_test,
+            "session_info": {
+                "session_id": simulation_response.session_info.session_id,
+                "skill_type": simulation_response.session_info.skill_type,
+                "status": simulation_response.session_info.status,
+                "current_step": simulation_response.session_info.current_step,
+                "total_steps": simulation_response.session_info.total_steps,
+                "difficulty_level": simulation_response.session_info.difficulty_level,
+                "started_at": simulation_response.session_info.started_at.isoformat()
+            },
+            "message": simulation_response.message,
+            "next_action": "complete_initial_test"
+        }
+    

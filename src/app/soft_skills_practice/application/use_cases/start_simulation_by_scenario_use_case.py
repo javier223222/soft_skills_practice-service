@@ -68,6 +68,7 @@ class StartSimulationByScenarioUseCase(StartSimulationUseCase):
                 }
 
             )
+            response = self.response(response)
             
             return response
             

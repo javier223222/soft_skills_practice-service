@@ -53,12 +53,12 @@ class RespondSimulationUseCase:
             if not session:
                 raise ValueError(f"Sesión {session_id} no encontrada o no está activa")
             
-            # 2. Obtener el paso actual
+           
             current_step = await self._get_current_step(session)
             if not current_step:
                 raise ValueError(f"No se encontró el paso actual para la sesión {session_id}")
             
-            # 3. Actualizar el paso actual con la respuesta del usuario
+            
             updated_step = await self._update_step_with_response(current_step, request)
             
             # 4. Obtener el escenario para contexto
@@ -81,32 +81,20 @@ class RespondSimulationUseCase:
             if next_step_info and not next_step_info.get("is_completed", False):
                 next_step = await self._create_next_step(session, next_step_info)
             
-            # 10. Actualizar sesión
+            
             await self._update_session_progress(session, evaluation, next_step_info)
             
-            # 11. Verificar si la simulación se completó y generar feedback final
+            
             is_completed = next_step_info.get("is_completed", False) if next_step_info else False
+
             
             if is_completed and self.generate_completion_feedback_use_case:
-                # Generar feedback completo de finalización
+                
                 completion_feedback = await self.generate_completion_feedback_use_case.execute(session_id)
                 
-                # 🚀 NUEVA FUNCIONALIDAD: Enviar notificaciones al microservicio de perfil
-                if self.points_notification_service:
-                    try:
-                        notification_results = await self.points_notification_service.notify_simulation_completed(
-                            user_id=session.user_id,
-                            completion_feedback=completion_feedback,
-                            session_id=session_id
-                        )
-                        
-                        # Agregar información de notificaciones al feedback
-                        completion_feedback.notification_status = notification_results
-                        
-                    except Exception as e:
-                        # No fallar la simulación si las notificaciones fallan
-                        import logging
-                        logging.warning(f"⚠️  Error enviando notificaciones para {session.user_id}: {e}")
+                
+                # TO DO Notificaciones
+
                 
                 return SimulationCompletedResponseDTO(
                     session_id=session_id,
@@ -115,7 +103,7 @@ class RespondSimulationUseCase:
                     message="¡Simulación completada exitosamente! Revisa tu feedback detallado."
                 )
             
-            # 12. Preparar respuesta normal para pasos intermedios
+           
             response = SimulationResponseDTO(
                 session_id=session_id,
                 step_number=updated_step.step_number,
@@ -392,7 +380,7 @@ Responde ÚNICAMENTE en formato JSON:
                 if session.status == SimulationStatus.STARTED:
                     session.status = SimulationStatus.SIMULATION
         
-        # Actualizar scores
+        session.end_at = datetime.now(timezone.utc) if session.status == SimulationStatus.COMPLETED else None
         if evaluation.get("overall_score"):
             session.scores.simulation_steps_scores.append(evaluation["overall_score"])
             if session.status == SimulationStatus.COMPLETED:

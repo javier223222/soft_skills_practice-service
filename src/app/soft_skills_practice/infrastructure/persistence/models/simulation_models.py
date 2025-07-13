@@ -22,6 +22,8 @@ class SimulationSession(Document):
     status: SimulationStatus = SimulationStatus.STARTED
     current_step: int = 0
     total_steps: int = 5
+    start_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    end_at: Optional[datetime] = None
     
     
     scores: ScoresData = Field(default_factory=ScoresData)
@@ -120,8 +122,7 @@ class Scenario(Document):
     steps_configuration: Dict[str, Any] = Field(default_factory=dict)
     evaluation_criteria: List[str] = Field(default_factory=list)
     tags: List[str] = Field(default_factory=list)
-    
-    
+    steps: Optional[int] = 5  
     usage_count: int = 0
     is_popular: bool = False
     is_create_by_ai: bool = False  

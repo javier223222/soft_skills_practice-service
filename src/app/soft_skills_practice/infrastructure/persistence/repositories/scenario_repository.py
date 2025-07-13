@@ -135,15 +135,8 @@ class ScenarioRepository(BaseRepository[Scenario]):
                     "has_previous":has_previous,
         }
     async def create_scenario(self, scenario) -> Scenario:
-        exiting_scenario=await Scenario.find_one(
-            {
-                "skill_type": scenario["skill_type"],
-                "title": scenario["title"]
-            }
-
-        )
-        if exiting_scenario:
-            raise ValueError("Scenario with this skill type and title already exists.")
+    
+       
         new_scenario=Scenario(**scenario)
         await new_scenario.insert()
         return new_scenario
