@@ -25,9 +25,9 @@ from ...infrastructure.persistence.models.base_models import (
 from ..services.gemini_service import GeminiService
 from ..services.user_mobile_service import UserMobileService
 from .generate_completion_feedback_use_case import GenerateCompletionFeedbackUseCase
-# from ...infrastructure.notifications.points_notification_service import PointsNotificationService
 
 
+from ...infrastructure.messaging.event_publisher import EventPublisher
 class RespondSimulationUseCase:
     def __init__(
         self,
@@ -36,17 +36,19 @@ class RespondSimulationUseCase:
         scenario_repository: ScenarioRepository,
         gemini_service: GeminiService,
         generate_completion_feedback_use_case: GenerateCompletionFeedbackUseCase = None,
-        # points_notification_service: PointsNotificationService = None
+        event_publisher: EventPublisher = None,
+       
     ):
         self.simulation_session_repository = simulation_session_repository
         self.simulation_step_repository = simulation_step_repository
         self.scenario_repository = scenario_repository
         self.gemini_service = gemini_service
         self.generate_completion_feedback_use_case = generate_completion_feedback_use_case
-        # self.points_notification_service = points_notification_service
+        self.event_publisher = event_publisher
+      
     
     async def execute(self, session_id: str, request: RespondSimulationRequestDTO):
-        """Procesar respuesta del usuario en una simulación"""
+        
         try:
             print(f"🔄 Procesando respuesta de simulación para sesión {session_id}...")
             session = await self._get_active_session(session_id)
@@ -61,22 +63,22 @@ class RespondSimulationUseCase:
             
             updated_step = await self._update_step_with_response(current_step, request)
             
-            # 4. Obtener el escenario para contexto
+           
             scenario = await self.scenario_repository.find_by_id(session.scenario_id)
             
-            # 5. Evaluar la respuesta con IA
+            
             evaluation = await self._evaluate_response(session, updated_step, scenario, request.user_response)
             
-            # 6. Generar feedback con IA
+            
             ai_feedback = await self._generate_feedback(evaluation, session, scenario)
             
-            # 7. Actualizar evaluación en el paso
+           
             await self._update_step_evaluation(updated_step, evaluation, ai_feedback)
             
-            # 8. Determinar siguiente paso
+            
             next_step_info = await self._determine_next_step(session, updated_step, evaluation)
             
-            # 9. Crear siguiente paso si es necesario
+            
             next_step = None
             if next_step_info and not next_step_info.get("is_completed", False):
                 next_step = await self._create_next_step(session, next_step_info)
@@ -91,9 +93,30 @@ class RespondSimulationUseCase:
             if is_completed and self.generate_completion_feedback_use_case:
                 
                 completion_feedback = await self.generate_completion_feedback_use_case.execute(session_id)
-                
-                
-                # TO DO Notificaciones
+          
+        
+                await self.event_publisher.publish_simulation_finished(
+                   feedbackResult={
+                "is_completed": True,
+                "completion_feedback": {
+                    "session_id": completion_feedback.session_id,
+                    "user_id": completion_feedback.user_id,
+                    "scenario_title": completion_feedback.scenario_title,
+                    "skill_type": completion_feedback.skill_type,
+                    "completion_status": completion_feedback.completion_status,
+                    "performance": {
+                        "overall_score": completion_feedback.performance.overall_score,
+                        "average_step_score": completion_feedback.performance.average_step_score,
+                        "total_time_minutes": completion_feedback.performance.total_time_minutes,
+                        "average_response_time_seconds": completion_feedback.performance.average_response_time_seconds,
+                        "help_requests_count": completion_feedback.performance.help_requests_count,
+                        "completion_percentage": completion_feedback.performance.completion_percentage,
+                        "confidence_level": completion_feedback.performance.confidence_level
+                    },
+                }
+                   }
+                )
+
 
                 
                 return SimulationCompletedResponseDTO(
@@ -123,30 +146,32 @@ class RespondSimulationUseCase:
     async def _get_active_session(self, session_id: str) -> Optional[SimulationSession]:
         """Obtener sesión activa por ID"""
         session = await self.simulation_session_repository.find_by_session_id(session_id)
-        if session and session.status in [SimulationStatus.STARTED, SimulationStatus.PRE_TEST, SimulationStatus.SIMULATION]:
-            return session
-        return None
+        if not session or session.status != SimulationStatus.STARTED or session.status != SimulationStatus.SIMULATION or session.status != SimulationStatus.PRE_TEST or session.status == SimulationStatus.COMPLETED or session.status == SimulationStatus.ABANDONED:
+            return None
+        
+        return session
+        
     
     async def _get_current_step(self, session: SimulationSession) -> Optional[SimulationStep]:
         """Obtener el paso actual de la simulación"""
         steps = await self.simulation_step_repository.find_by_session_id(session.session_id)
         if steps:
-            # Ordenar por step_number y obtener el último
+            
             steps.sort(key=lambda x: x.step_number, reverse=True)
             return steps[0]
         return None
     
     async def _update_step_with_response(self, step: SimulationStep, request: RespondSimulationRequestDTO) -> SimulationStep:
         """Actualizar el paso con la respuesta del usuario"""
-        # Actualizar contenido
+        
         step.content.user_response = request.user_response
         
-        # Actualizar tracking de interacción
+        
         step.interaction_tracking.time_to_respond = request.response_time_seconds
         step.interaction_tracking.response_length = len(request.user_response)
         step.interaction_tracking.help_requested = request.help_requested
         
-        # Análisis básico de respuesta
+       
         words = request.user_response.split()
         sentences = request.user_response.split('.')
         
@@ -156,14 +181,14 @@ class RespondSimulationUseCase:
             confidence_level=self._analyze_confidence_level(request.user_response)
         )
         
-        # Guardar cambios
+        
         await step.save()
         return step
     
     async def _evaluate_response(self, session: SimulationSession, step: SimulationStep, scenario, user_response: str) -> Dict[str, Any]:
         """Evaluar la respuesta del usuario con IA"""
         
-        # Construir contexto para la evaluación
+       
         scenario_context = f"""
 Escenario: {scenario.title}
 Descripción: {scenario.description}
@@ -173,7 +198,7 @@ Nivel de dificultad: {session.session_metadata.difficulty_level}
 """
         
         if step.step_type == StepType.PRE_TEST:
-            # Evaluación para test inicial
+            
             evaluation_prompt = f"""
 Evalúa esta respuesta de test inicial para la habilidad "{session.skill_type}":
 
@@ -209,12 +234,12 @@ Responde ÚNICAMENTE en formato JSON:
 }}
 """
         else:
-            # Evaluación para simulación
+           
             try:
                 evaluation = await self.gemini_service.evaluate_response(scenario_context, user_response, session.skill_type)
                 return evaluation
             except Exception as e:
-                # Fallback para evaluación
+               
                 return {
                     "overall_score": 75,
                     "criteria_scores": {
@@ -231,7 +256,7 @@ Responde ÚNICAMENTE en formato JSON:
             response = await self.gemini_service._generate_content(evaluation_prompt)
             return self.gemini_service._parse_evaluation_response(response.content)
         except Exception as e:
-            # Fallback para test inicial
+           
             return {
                 "overall_score": 75,
                 "experience_level": "intermedio",
@@ -253,7 +278,7 @@ Responde ÚNICAMENTE en formato JSON:
             feedback = await self.gemini_service.generate_feedback(evaluation)
             return feedback
         except Exception as e:
-            # Fallback feedback
+            
             score = evaluation.get("overall_score", 75)
             if score >= 80:
                 return "¡Excelente respuesta! Demuestras un buen entendimiento de la situación. Continúa con el siguiente paso."
@@ -280,7 +305,7 @@ Responde ÚNICAMENTE en formato JSON:
         """Determinar el siguiente paso de la simulación"""
         
         if current_step.step_type == StepType.PRE_TEST:
-            # Después del test inicial, continuar con la simulación
+            
             return {
                 "step_type": StepType.SIMULATION,
                 "message_type": MessageType.SIMULATION_PROMPT,
@@ -288,7 +313,7 @@ Responde ÚNICAMENTE en formato JSON:
                 "is_completed": False
             }
         elif current_step.step_type == StepType.SIMULATION:
-            # Verificar si hemos completado todos los pasos
+           
             if current_step.step_number >= session.total_steps - 1:
                 return {
                     "step_type": StepType.FEEDBACK,
@@ -297,7 +322,7 @@ Responde ÚNICAMENTE en formato JSON:
                     "is_completed": True
                 }
             else:
-                # Continuar con más simulación
+               
                 return {
                     "step_type": StepType.SIMULATION,
                     "message_type": MessageType.SIMULATION_PROMPT,
@@ -305,7 +330,7 @@ Responde ÚNICAMENTE en formato JSON:
                     "is_completed": False
                 }
         else:
-            # Finalizar simulación
+            
             return {
                 "is_completed": True
             }
@@ -314,7 +339,7 @@ Responde ÚNICAMENTE en formato JSON:
         """Crear el siguiente paso de la simulación"""
         
         if next_step_info.get("step_type") == StepType.SIMULATION:
-            # Generar siguiente escenario o pregunta
+            
             scenario = await self.scenario_repository.find_by_id(session.scenario_id)
             
             prompt = f"""
@@ -340,7 +365,7 @@ Responde ÚNICAMENTE en formato JSON:
                 response = await self.gemini_service._generate_content(prompt)
                 content_data = self.gemini_service._parse_scenario_response(response.content)
             except Exception as e:
-                # Fallback content
+                
                 content_data = {
                     "prompt": f"Continuando con el escenario de {scenario.title}",
                     "question": f"¿Cómo aplicarías {session.skill_type} en esta nueva fase de la situación?",

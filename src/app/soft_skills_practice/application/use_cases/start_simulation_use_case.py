@@ -3,11 +3,9 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from ..dtos.simulation_dtos import (
     StartSimulationRequestDTO, 
-    StartSimulationResponseDTO,
+   
     StartSimulationRequestBySoftSkillDTO,
-    SimulationSessionDTO,
-    InitialTestDTO,
-    SimulationStepDTO
+    
 )
 from ...infrastructure.persistence.repositories.scenario_repository import ScenarioRepository
 from ...infrastructure.persistence.repositories.simulation_session_repository import SimulationSessionRepository
@@ -65,13 +63,13 @@ La salida debe estar en el siguiente formato JSON, sin comentarios ni explicacio
   "description": "Descripción general del contexto del escenario",
   "difficulty_level": {request.difficulty_preference},
   "estimated_duration": Duración estimada en minutos ,
-  "steps":Numero de pasos de la simulación,
+  "steps":Numero de pasos de la simulación debe ser siempre  mayor a 4 ,
   "initial_situation": "Situación inicial que presenta el reto o dilema al usuario",
   "tags": ["etiquetas", "relacionadas", "a la habilidad"]
 }}
 
 Este escenario debe invitar a la reflexión, toma de decisiones o análisis, y enfocarse únicamente en poner a prueba la habilidad blanda: "{request.skill_type}".
-no debe durar mas de 15 minutos en completarse.
+no debe durar mas de 20 minutos en completarse.
 
 """
             response = await self.gemini_service._generate_content(prompt)
@@ -105,12 +103,12 @@ no debe durar mas de 15 minutos en completarse.
 
     async def _get_scenario(self, scenario_id: str):
         """Obtener escenario por ID"""
-        # Intentar buscar por ObjectId primero
+
         scenario = await self.scenario_repository.find_by_id(scenario_id)
         if scenario:
             return scenario
         
-        # Si no se encuentra, buscar por scenario_id personalizado
+      
         scenario = await self.scenario_repository.find_by_scenario_id(scenario_id)
         return scenario
     
@@ -118,7 +116,7 @@ no debe durar mas de 15 minutos en completarse.
         """Crear nueva sesión de simulación"""
         session_id = str(uuid.uuid4())
         
-        # Configurar dificultad (usar la del escenario o la preferencia del usuario)
+        
         difficulty_level = request.difficulty_preference or scenario.difficulty_level
         
         session = SimulationSession(
@@ -138,7 +136,7 @@ no debe durar mas de 15 minutos en completarse.
             )
         )
         
-        # Guardar sesión
+        
         saved_session = await self.simulation_session_repository.create(session)
         return saved_session
     
@@ -154,8 +152,7 @@ CONTEXTO DEL ESCENARIO:
 - Descripción: {scenario.description}
 - Situación inicial: {scenario.initial_situation}
 - Nivel de dificultad: {scenario.difficulty_level}/5
-- Nivel de seniority del usuario: {request.seniority_level}
-- Especialización técnica del usuario: {request.tecnical_specialization}
+
 
 Genera un test inicial que:
 1. Evalúe el conocimiento previo del usuario sobre la habilidad en base a su area de especializacion tecnica que es "{request.tecnical_specialization}" y su seniority level "{request.seniority_level}"
@@ -182,7 +179,7 @@ La pregunta debe ser abierta y permitir evaluar la experiencia previa del usuari
             
             return initial_test_data
         except Exception as e:
-            # Fallback en caso de error con IA
+           
             return {
                 "question": f"Antes de comenzar con el escenario '{scenario.title}', cuéntanos sobre tu experiencia previa con {scenario.skill_type}. ¿Has enfrentado situaciones similares antes? ¿Cómo las manejaste?",
                 "context": f"Vamos a trabajar en un escenario sobre {scenario.skill_type}. Tu respuesta nos ayudará a personalizar la experiencia.",

@@ -38,21 +38,20 @@ class GetSimulationStatusUseCase:
     async def execute(self, session_id: str) -> GetSimulationStatusDTO:
         """Obtener el estado completo de una simulación"""
         try:
-            # 1. Obtener la sesión
+           
             session = await self.simulation_session_repository.find_by_session_id(session_id)
             if not session:
                 raise ValueError(f"Sesión {session_id} no encontrada")
-            
-            # 2. Obtener el escenario
+           
             scenario = await self.scenario_repository.find_by_id(session.scenario_id)
             if not scenario:
                 raise ValueError(f"Escenario {session.scenario_id} no encontrado")
             
-            # 3. Obtener todos los pasos
+            
             steps = await self.simulation_step_repository.find_by_session_id(session_id)
             steps.sort(key=lambda x: x.step_number)
             
-            # 4. Procesar información de la sesión
+           
             session_info = SimulationSessionDTO(
                 session_id=session.session_id,
                 user_id=session.user_id,

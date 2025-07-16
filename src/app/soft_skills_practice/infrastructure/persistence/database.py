@@ -22,7 +22,7 @@ class DatabaseConnection:
             self.client = AsyncIOMotorClient(config.mongodb_url)
             self.database = self.client[config.mongodb_db_name]
             
-            # Inicializar Beanie con todos los modelos
+           
             await init_beanie(
                 database=self.database,
                 document_models=[

@@ -23,9 +23,11 @@ from app.soft_skills_practice.application.dtos.simulation_dtos import (
     SimulationCompletedResponseDTO,
     StartSimulationRequestBySoftSkillDTO
 )
+from app.soft_skills_practice.infrastructure.messaging.rabbitmq_producer import rabbitmq_producer
+from app.soft_skills_practice.infrastructure.messaging.event_publisher import EventPublisher
 
 from app.soft_skills_practice.application.services.gemini_service import GeminiService
-from app.soft_skills_practice.application.services.user_mobile_service import UserMobileService
+
 
 from app.soft_skills_practice.infrastructure.persistence.repositories.skill_catalog_repository import SkillCatalogRepository
 from app.soft_skills_practice.infrastructure.persistence.repositories.simulation_session_repository import SimulationSessionRepository
@@ -35,12 +37,20 @@ from app.soft_skills_practice.infrastructure.persistence.repositories.scenario_r
 
 load_dotenv()
 
+event_publisher = EventPublisher(rabbitmq_producer)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Gestión del ciclo de vida de la aplicación"""
+    
     
     await db_connection.connect()
-    print("✅ Conexión a MongoDB establecida")
+    await rabbitmq_producer.connect()
+    await rabbitmq_producer.declare_queue("notifications")
+    await rabbitmq_producer.declare_queue("profile_updates")
+
+    
+
+    print("Conexión a RabbitMQ establecida")
+    print("Conexión a MongoDB establecida")
     
  
     
@@ -48,7 +58,9 @@ async def lifespan(app: FastAPI):
     
    
     await db_connection.disconnect()
-    print("❌ Conexión a MongoDB cerrada")
+    await rabbitmq_producer.disconnect()
+    
+    print("Conexión a MongoDB cerrada")
     
  
 
@@ -165,7 +177,7 @@ async def get_paginated_scenarios_by_skill(
         scenario_repo = ScenarioRepository()
         get_paginated_scenarios_use_case = GetPaginatedScenariosBySkillUseCase(scenario_repo)
         
-        # Obtener escenarios paginados
+        
         paginated_response = await get_paginated_scenarios_use_case.execute(skill_type, pagination_params)
         
         return {
@@ -354,6 +366,7 @@ async def respond_simulation(session_id: str, request: RespondSimulationRequestD
             scenario_repo,
             gemini_service,
             generate_completion_feedback_use_case,
+            event_publisher=event_publisher
             
         )
         
@@ -362,7 +375,7 @@ async def respond_simulation(session_id: str, request: RespondSimulationRequestD
         
         
         if isinstance(simulation_response, SimulationCompletedResponseDTO):
-            return {
+            return{
                 "success": True,
                 "session_id": simulation_response.session_id,
                 "is_completed": simulation_response.is_completed,
@@ -404,6 +417,8 @@ async def respond_simulation(session_id: str, request: RespondSimulationRequestD
                 "message": simulation_response.message,
                 "next_action": "view_detailed_feedback"
             }
+            
+             
         
         
         return {
@@ -483,148 +498,5 @@ async def get_simulation_status(session_id: str):
 
 
 
-@app.get("/mobile/user/{user_id}/level")
-async def get_user_level(user_id: str):
-    """
-    Obtener información del nivel del usuario para la aplicación móvil
-    
-    - Nivel actual del usuario
-    - Puntos en el nivel actual
-    - Puntos necesarios para el siguiente nivel
-    - Progreso del nivel
-    - Logros desbloqueados
-    """
-    try:
-        if not user_id or user_id.strip() == "":
-            raise HTTPException(status_code=400, detail="El user_id no puede estar vacío")
-        
-        
-        simulation_session_repo = SimulationSessionRepository()
-        user_mobile_service = UserMobileService(simulation_session_repo)
-        
-        
-        level_info = await user_mobile_service.get_user_level_info(user_id)
-        
-        return {
-            "success": True,
-            "user_id": level_info.user_id,
-            "current_level": level_info.current_level,
-            "current_points": level_info.current_points,
-            "points_to_next_level": level_info.points_to_next_level,
-            "total_points_earned": level_info.total_points_earned,
-            "level_progress_percentage": level_info.level_progress_percentage,
-            "achievements_unlocked": level_info.achievements_unlocked,
-            "simulations_completed": level_info.simulations_completed
-        }
-        
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener nivel del usuario: {str(e)}")
-
-
-@app.get("/mobile/user/{user_id}/achievements")
-async def get_user_achievements(user_id: str):
-    """
-    Obtener logros del usuario para la aplicación móvil
-    
-    - Lista de logros desbloqueados
-    - Información detallada de cada logro
-    - Fecha de desbloqueo
-    - Rareza del logro
-    """
-    try:
-        if not user_id or user_id.strip() == "":
-            raise HTTPException(status_code=400, detail="El user_id no puede estar vacío")
-        
-        
-        simulation_session_repo = SimulationSessionRepository()
-        user_mobile_service = UserMobileService(simulation_session_repo)
-        
-        
-        achievements = await user_mobile_service.get_user_achievements(user_id)
-        
-        return {
-            "success": True,
-            "user_id": user_id,
-            "total_achievements": len(achievements),
-            "achievements": [
-                {
-                    "achievement_id": achievement.achievement_id,
-                    "title": achievement.title,
-                    "description": achievement.description,
-                    "icon": achievement.icon,
-                    "unlocked_at": achievement.unlocked_at.isoformat(),
-                    "rarity": achievement.rarity
-                }
-                for achievement in achievements
-            ]
-        }
-        
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener logros del usuario: {str(e)}")
-
-
-@app.get("/mobile/user/{user_id}/dashboard")
-async def get_user_mobile_dashboard(user_id: str):
-    """
-    Obtener datos del dashboard para la aplicación móvil
-    
-    - Información de nivel y progreso
-    - Logros recientes
-    - Estadísticas generales
-    - Datos necesarios para las vistas principales
-    """
-    try:
-        if not user_id or user_id.strip() == "":
-            raise HTTPException(status_code=400, detail="El user_id no puede estar vacío")
-        
-        
-        simulation_session_repo = SimulationSessionRepository()
-        user_mobile_service = UserMobileService(simulation_session_repo)
-        
-        
-        level_info = await user_mobile_service.get_user_level_info(user_id)
-        achievements = await user_mobile_service.get_user_achievements(user_id)
-        
-        
-        recent_achievements = sorted(achievements, key=lambda x: x.unlocked_at, reverse=True)[:3]
-        
-        return {
-            "success": True,
-            "user_id": user_id,
-            "level_info": {
-                "current_level": level_info.current_level,
-                "current_points": level_info.current_points,
-                "points_to_next_level": level_info.points_to_next_level,
-                "total_points_earned": level_info.total_points_earned,
-                "level_progress_percentage": level_info.level_progress_percentage,
-                "next_level": level_info.current_level + 1
-            },
-            "achievements_summary": {
-                "total_unlocked": len(achievements),
-                "recent_achievements": [
-                    {
-                        "title": achievement.title,
-                        "icon": achievement.icon,
-                        "rarity": achievement.rarity
-                    }
-                    for achievement in recent_achievements
-                ]
-            },
-            "stats": {
-                "simulations_completed": level_info.simulations_completed,
-                "achievements_unlocked": level_info.achievements_unlocked,
-                "current_streak": 0,  # TODO: Implementar streak
-                "favorite_skill": "conflict_resolution"  # TODO: Calcular skill favorita
-            }
-        }
-        
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener dashboard del usuario: {str(e)}")
 
 

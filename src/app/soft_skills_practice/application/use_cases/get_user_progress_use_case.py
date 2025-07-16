@@ -47,8 +47,8 @@ class GetUserProgressUseCase:
                 
                 if session.status == SimulationStatus.COMPLETED:
                     skills_progress[skill_id]['completed_sessions'] += 1
-                    if session.final_score is not None:
-                        skills_progress[skill_id]['total_score'] += session.final_score
+                    if session.scores.final_score is not None:
+                        skills_progress[skill_id]['total_score'] += session.scores.final_score
                         skills_progress[skill_id]['session_count'] += 1
             
             

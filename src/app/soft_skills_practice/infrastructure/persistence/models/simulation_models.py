@@ -10,7 +10,7 @@ from .base_models  import (
     PerformanceTracking, InteractionTracking, ResponseAnalysis,
     EvaluationData, StepContent, RecommendationTracking,
     UserSkillProgress, UsagePatterns, 
-    SkillMetadata, SkillVisualData, SkillIconData  # Nuevos imports
+    SkillMetadata
 )
 
 class SimulationSession(Document):
@@ -24,7 +24,6 @@ class SimulationSession(Document):
     total_steps: int = 5
     start_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     end_at: Optional[datetime] = None
-    
     
     scores: ScoresData = Field(default_factory=ScoresData)
     
@@ -103,11 +102,11 @@ class UserRecommendations(Document):
 class Scenario(Document):
     """Modelo para escenarios de simulación con información visual"""
     scenario_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    skill_type: str = Field(index=True)  # Tipo de soft skill
+    skill_type: str = Field(index=True)  
     title: str
     description: str
     difficulty_level: int = Field(index=True)
-    estimated_duration: int  # en minutos
+    estimated_duration: int  
     initial_situation: str
     
     
@@ -144,8 +143,8 @@ class Scenario(Document):
 
 class SkillCatalog(Document):
     """Modelo para catálogo de soft skills con información completa"""
-    # Campos principales con indexación correcta
-    skill_name: str = Field(default="", index=True)  # Campo directo para indexación
+    
+    skill_name: str = Field(default="", index=True)  
     display_name: str
     description: str
     category: str = Field(default="", index=True)
@@ -153,39 +152,39 @@ class SkillCatalog(Document):
     difficulty_levels: List[int] = Field(default=[1, 2, 3, 4, 5])
     estimated_time_per_level: int = 15
     
-    # Información visual
+    
     primary_color: str = "#757575"
     secondary_color: Optional[str] = None
     gradient_start: Optional[str] = None
     gradient_end: Optional[str] = None
     
-    # Iconos
+    
     emoji: Optional[str] = None
     icon_url: Optional[str] = None
     icon_name: Optional[str] = None
     background_color: Optional[str] = None
     icon_color: Optional[str] = None
     
-    # Configuración - sin Indexed para bool
-    display_order: int = 0
-    is_featured: bool = False  # Sin Indexed
-    is_new: bool = False
-    is_active: bool = True  # Sin Indexed pero se indexará manualmente
     
-    # Estadísticas de uso
+    display_order: int = 0
+    is_featured: bool = False 
+    is_new: bool = False
+    is_active: bool = True  
+    
+    
     total_scenarios: int = 0
     popular_scenarios_count: int = 0
     total_users_practiced: int = 0
     average_user_score: float = 0.0
     
-    # Configuración de niveles de dificultad
+    
     difficulty_config: Dict[int, Dict[str, Any]] = Field(default_factory=dict)
     
-    # Relaciones
-    related_skills: List[str] = Field(default_factory=list)  # Skills relacionadas
-    prerequisite_skills: List[str] = Field(default_factory=list)  # Skills prerequisito
     
-    # Metadatos
+    related_skills: List[str] = Field(default_factory=list)  
+    prerequisite_skills: List[str] = Field(default_factory=list)  
+    
+    
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     

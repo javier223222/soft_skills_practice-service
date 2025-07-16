@@ -39,26 +39,26 @@ class GenerateCompletionFeedbackUseCase:
             steps = await self.simulation_step_repository.find_by_session_id(session_id)
             steps.sort(key=lambda x: x.step_number)
             
-            # 2. Calcular métricas de rendimiento
+            
             performance = self._calculate_performance_metrics(session, steps)
             
-            # 3. Generar evaluación por habilidades
+            
             skill_assessments = await self._generate_skill_assessments(session, steps, scenario)
             
-            # 4. Generar feedback general con IA
+            
             overall_feedback = await self._generate_overall_feedback(session, steps, scenario, performance)
             
-            # 5. Identificar logros y aprendizajes clave
+            
             achievements = self._identify_key_achievements(steps, performance)
             learnings = self._extract_main_learnings(steps)
             
-            # 6. Generar recomendaciones
+            
             recommendations = await self._generate_next_steps_recommendations(session, performance, skill_assessments)
             
-            # 7. Calcular ranking (simplificado por ahora)
+            
             percentile = self._calculate_percentile_ranking(performance.overall_score)
             
-            # 8. Determinar si ganó certificado o badge
+            
             certificate_earned = performance.overall_score >= 80.0
             badge_unlocked = self._check_badge_unlock(performance, skill_assessments)
             
@@ -87,24 +87,24 @@ class GenerateCompletionFeedbackUseCase:
         """Calcular métricas de rendimiento"""
         completed_steps = [s for s in steps if s.content.user_response]
         
-        # Puntuaciones
+        
         scores = [s.evaluation.step_score for s in steps if s.evaluation and s.evaluation.step_score]
         average_step_score = sum(scores) / len(scores) if scores else 0
         overall_score = min(100, average_step_score * 1.2)  # Boost por completar
         
-        # Tiempos
+        
         total_time = self._calculate_total_time_minutes(session, steps)
         response_times = [s.interaction_tracking.time_to_respond for s in steps 
                          if s.interaction_tracking and s.interaction_tracking.time_to_respond]
         avg_response_time = sum(response_times) / len(response_times) if response_times else 0
         
-        # Ayuda solicitada
+        
         help_requests = len([s for s in steps if s.interaction_tracking and s.interaction_tracking.help_requested])
         
-        # Completitud
+        
         completion_percentage = (len(completed_steps) / session.total_steps) * 100 if session.total_steps > 0 else 0
         
-        # Nivel de confianza basado en keywords y tiempo de respuesta
+        
         confidence_level = self._calculate_confidence_level(steps, avg_response_time)
         
         return PerformanceMetricsDTO(
@@ -121,7 +121,7 @@ class GenerateCompletionFeedbackUseCase:
         """Generar evaluación detallada por habilidad"""
         skill_assessments = []
         
-        # Agrupar evaluaciones por criterio/habilidad
+        
         skill_data = {}
         for step in steps:
             if step.evaluation and step.evaluation.criteria_scores:
@@ -142,16 +142,16 @@ class GenerateCompletionFeedbackUseCase:
                     if step.evaluation.specific_feedback:
                         skill_data[skill]['feedback'].append(step.evaluation.specific_feedback)
         
-        # Crear assessment por cada habilidad
+        
         for skill_name, data in skill_data.items():
             avg_score = sum(data['scores']) / len(data['scores']) if data['scores'] else 0
             level = self._determine_skill_level(avg_score)
             
-            # Consolidar strengths y areas únicas
-            unique_strengths = list(set(data['strengths']))[:3]  # Top 3
-            unique_improvements = list(set(data['improvements']))[:3]  # Top 3
+           
+            unique_strengths = list(set(data['strengths']))[:3] 
+            unique_improvements = list(set(data['improvements']))[:3]
             
-            # Generar feedback específico con IA
+            
             specific_feedback = await self._generate_skill_specific_feedback(
                 skill_name, avg_score, unique_strengths, unique_improvements
             )
@@ -170,7 +170,7 @@ class GenerateCompletionFeedbackUseCase:
     async def _generate_overall_feedback(self, session, steps, scenario, performance) -> str:
         """Generar feedback general usando IA"""
         try:
-            # Preparar contexto para el prompt
+        
             completed_steps = len([s for s in steps if s.content.user_response])
             user_responses = [s.content.user_response for s in steps if s.content.user_response]
             
@@ -226,39 +226,39 @@ class GenerateCompletionFeedbackUseCase:
         if performance.confidence_level == "high":
             achievements.append("🎪 Demostraste alta confianza en tus respuestas")
         
-        return achievements[:4]  # Máximo 4 logros
+        return achievements[:4]  
     
     def _extract_main_learnings(self, steps) -> List[str]:
         """Extraer aprendizajes principales de los feedbacks"""
         learnings = []
         
-        # Extraer insights de los feedbacks de IA
+        
         for step in steps:
             if step.content.ai_feedback:
-                # Buscar patrones de aprendizaje en el feedback
+                
                 feedback = step.content.ai_feedback.lower()
                 if "importante" in feedback or "clave" in feedback:
-                    # Extraer la parte relevante
+                    
                     sentences = step.content.ai_feedback.split('.')
                     for sentence in sentences:
                         if "importante" in sentence.lower() or "clave" in sentence.lower():
                             learnings.append(sentence.strip())
                             break
         
-        # Si no hay suficientes, agregar aprendizajes genéricos
+        
         if len(learnings) < 2:
             learnings.extend([
                 "La comunicación efectiva requiere claridad y empatía",
                 "Tomar tiempo para reflexionar mejora la calidad de las decisiones"
             ])
         
-        return learnings[:3]  # Máximo 3 aprendizajes
+        return learnings[:3]  
     
     async def _generate_next_steps_recommendations(self, session, performance, skill_assessments) -> List[str]:
         """Generar recomendaciones personalizadas"""
         recommendations = []
         
-        # Basado en puntuación general
+        
         if performance.overall_score < 70:
             recommendations.append(f"Practica más escenarios de {session.skill_type} para fortalecer las bases")
         elif performance.overall_score < 85:
@@ -266,22 +266,22 @@ class GenerateCompletionFeedbackUseCase:
         else:
             recommendations.append(f"Considera convertirte en mentor en {session.skill_type}")
         
-        # Basado en habilidades específicas
+        
         for assessment in skill_assessments:
             if assessment.score < 70:
                 recommendations.append(f"Enfócate en mejorar: {assessment.skill_name}")
         
-        # Recomendación de tiempo
+        
         if performance.average_response_time_seconds > 120:
             recommendations.append("Practica tomar decisiones más rápidas en situaciones similares")
         
-        # Recomendación de ayuda
+       
         if performance.help_requests_count > 2:
             recommendations.append("Construye más confianza practicando escenarios similares")
         
-        return recommendations[:4]  # Máximo 4 recomendaciones
+        return recommendations[:4]  
     
-    # Métodos auxiliares
+    
     def _calculate_total_time_minutes(self, session, steps) -> int:
         """Calcular tiempo total en minutos"""
         if not steps:
@@ -323,7 +323,7 @@ class GenerateCompletionFeedbackUseCase:
     
     def _calculate_percentile_ranking(self, score: float) -> int:
         """Calcular percentil (simplificado)"""
-        # Por ahora una estimación basada en la puntuación
+       
         if score >= 90:
             return 95
         elif score >= 80:

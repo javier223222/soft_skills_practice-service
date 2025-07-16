@@ -15,22 +15,22 @@ class GetPaginatedUserSkillsUseCase:
     async def execute(self, user_id: str, pagination_params: PaginationParamsDTO) -> PaginatedSkillsResponseDTO:
         """Obtener skills disponibles con progreso del usuario - paginado"""
         try:
-            # Validar que el user_id no esté vacío
+            
             if not user_id or user_id.strip() == "":
                 raise ValueError("El user_id no puede estar vacío")
             
-            # Obtener todas las skills activas (sin paginación para calcular progreso)
+           
             all_skills = await self.skill_catalog_repository.find_active_skills()
             
             
-            # Obtener progreso del usuario
+           
             user_progress = await self.get_progress_use_case.execute(user_id, auto_register=True)
             
             
-            # Combinar información de skills con progreso
+            
             skills_with_progress = []
             for skill in all_skills:
-                # Buscar el progreso del usuario para esta skill
+                
                 progress_percentage = 0.0
                 sessions_completed = 0
                 average_score = 0.0
@@ -38,12 +38,12 @@ class GetPaginatedUserSkillsUseCase:
                 points_earned = 0
                 
                 for progress in user_progress.skills_progress:
-                    if progress.skill_id == skill.skill_name:  # skill_name es el ID
+                    if progress.skill_id == skill.skill_name:  
                         progress_percentage = progress.progress_percentage
                         sessions_completed = progress.completed_sessions
                         
                         average_score = progress.average_score
-                        # Calcular nivel basado en puntos (cada 100 puntos = 1 nivel)
+                       
                         if sessions_completed> 0 and average_score > 0:
                             points_earned = int(average_score * sessions_completed)
                             current_level = max(1, points_earned // 100 + 1)
@@ -52,11 +52,11 @@ class GetPaginatedUserSkillsUseCase:
                 skill_dto = PaginatedSkillDTO(
                     skill_id=skill.skill_name,
                     skill_name=skill.skill_name,
-                    skill_type=skill.skill_name,  # Para coherencia
+                    skill_type=skill.skill_name,  
                     name=skill.display_name,
                     description=skill.description,
                     category=skill.category,
-                    difficulty="intermedio",  # Default por ahora
+                    difficulty="intermedio",  
                     visual_config={
                         "icon": skill.icon_name or skill.emoji or "🎯",
                         "color_hex": skill.primary_color or "#4A90E2",
@@ -70,7 +70,7 @@ class GetPaginatedUserSkillsUseCase:
                         "sessions_completed": sessions_completed,
                         "average_score": average_score
                     },
-                    scenarios_count=skill.total_scenarios or 2  # Default
+                    scenarios_count=skill.total_scenarios or 2  
                 )
                 
                 skills_with_progress.append(skill_dto)
@@ -79,16 +79,16 @@ class GetPaginatedUserSkillsUseCase:
             total_items = len(skills_with_progress)
             total_pages = math.ceil(total_items / pagination_params.page_size)
             
-            # Validar que la página solicitada sea válida
+           
             if pagination_params.page > total_pages and total_items > 0:
                 raise ValueError(f"Página {pagination_params.page} no existe. Total de páginas: {total_pages}")
             
-            # Aplicar paginación
+            
             start_index = (pagination_params.page - 1) * pagination_params.page_size
             end_index = start_index + pagination_params.page_size
             paginated_skills = skills_with_progress[start_index:end_index]
             
-            # Crear metadatos de paginación
+            
             pagination_meta = PaginationMetaDTO(
                 current_page=pagination_params.page,
                 page_size=pagination_params.page_size,

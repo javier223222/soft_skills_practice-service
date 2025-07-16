@@ -3,10 +3,10 @@ import sys
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
+
 load_dotenv()
 
-# Agregar src al path
+
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from app.soft_skills_practice.infrastructure.persistence.database import db_connection
@@ -21,7 +21,7 @@ async def populate_skills_catalog():
         
         repo = SkillCatalogRepository()
         
-        # Datos de soft skills con información visual completa
+       
         skills_data = [
             {
                 "skill_name": "active_listening",
@@ -335,18 +335,18 @@ async def populate_skills_catalog():
         updated_count = 0
         
         for skill_data in skills_data:
-            # Verificar si ya existe
+            
             existing = await repo.find_by_skill_name(skill_data["skill_name"])
             
             if existing:
-                # Actualizar datos existentes
+               
                 for key, value in skill_data.items():
                     setattr(existing, key, value)
                 await existing.save()
                 updated_count += 1
                 print(f"   ✏️ Actualizada: {skill_data['display_name']}")
             else:
-                # Crear nueva
+                
                 await repo.create_skill(skill_data)
                 created_count += 1
                 print(f"   ✅ Creada: {skill_data['display_name']}")

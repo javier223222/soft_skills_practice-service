@@ -17,6 +17,7 @@ class AppConfig(BaseSettings):
     
     mongodb_url: str
     mongodb_db_name: str
+    rabbitmq_url: str 
     
    
    
@@ -24,6 +25,7 @@ class AppConfig(BaseSettings):
     points_queue_name: str = "points_updates"
     achievements_queue_name: str = "achievements_updates"
     profile_queue_name: str = "profile_updates"
+    notifications_queue_name: str = "notifications"
     
     
     profile_service_url: str = "http://localhost:3000"

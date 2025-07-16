@@ -44,27 +44,27 @@ class UserRecommendationsRepository(BaseRepository[UserRecommendations]):
         
         skill_progress = recommendations.skills_analytics[skill_name]
         
-        # Actualizar estadísticas
+        
         skill_progress.times_practiced += 1
         skill_progress.last_practiced = datetime.utcnow()
         
-        # Calcular nuevo promedio
+        
         current_total = skill_progress.average_score * (skill_progress.times_practiced - 1)
         skill_progress.average_score = (current_total + score) / skill_progress.times_practiced
         
-        # Actualizar mejor score
+        
         if score > skill_progress.best_score:
             skill_progress.best_score = int(score)
         
-        # Actualizar habilidad natural (solo en la primera sesión)
-        if skill_progress.natural_ability is None:
-            skill_progress.natural_ability = int(score / 10)  # Convertir a escala 1-10
         
-        # Actualizar patrones de uso
+        if skill_progress.natural_ability is None:
+            skill_progress.natural_ability = int(score / 10) 
+        
+       
         if skill_name not in recommendations.usage_patterns.favorite_skills:
             recommendations.usage_patterns.favorite_skills.append(skill_name)
         
-        # Actualizar datos de recomendación
+        
         if skill_name not in recommendations.recommendation_data.skills_practiced:
             recommendations.recommendation_data.skills_practiced.append(skill_name)
         
@@ -144,11 +144,10 @@ class UserRecommendationsRepository(BaseRepository[UserRecommendations]):
         
         skills_data = recommendations.skills_analytics
         
-        # Calcular promedio general
         all_scores = [skill.average_score for skill in skills_data.values()]
         average_performance = sum(all_scores) / len(all_scores) if all_scores else 0.0
         
-        # Encontrar habilidad más mejorada
+      
         most_improved_skill = None
         best_improvement = 0
         

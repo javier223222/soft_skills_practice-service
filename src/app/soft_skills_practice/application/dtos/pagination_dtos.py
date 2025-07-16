@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 
+from .scenario_dtos import ScenarioDTO
+
 class PaginationParamsDTO(BaseModel):
     """DTO para parámetros de paginación"""
     page: int = Field(default=1, ge=1, description="Número de página (inicia en 1)")
@@ -21,9 +23,9 @@ class PaginationMetaDTO(BaseModel):
 class PaginatedSkillDTO(BaseModel):
     """DTO para skill con progreso paginado - coherente con vistas móviles"""
     skill_id: str
-    skill_name: str  # Nombre técnico 
-    skill_type: str  # Tipo de skill (conflict_resolution, etc.)
-    name: str  # Nombre para mostrar
+    skill_name: str 
+    skill_type: str  
+    name: str  
     description: str
     category: str
     difficulty: str
@@ -50,8 +52,6 @@ class PaginatedSkillsResponseDTO(BaseModel):
     pagination: PaginationMetaDTO
 
 
-# Import necesario para evitar importaciones circulares
-from .scenario_dtos import ScenarioDTO
 
 class PaginatedScenariosResponseDTO(BaseModel):
     """DTO para respuesta paginada de escenarios"""

@@ -62,6 +62,9 @@ class ScenarioRepository(BaseRepository[Scenario]):
         return await Scenario.find(
             Scenario.is_popular == False
         ).sort( -Scenario.usage_count).to_list()
+    async def find_scenarios_all(self):
+        """Buscar todos los escenarios"""
+        return await Scenario.find().sort(-Scenario.is_popular, -Scenario.usage_count).to_list()
     async def find_by_tags(self, tags: List[str]) -> List[Scenario]:
         """Buscar escenarios por etiquetas"""
         return await Scenario.find(
@@ -134,6 +137,7 @@ class ScenarioRepository(BaseRepository[Scenario]):
                     "has_next":has_next,
                     "has_previous":has_previous,
         }
+    
     async def create_scenario(self, scenario) -> Scenario:
     
        

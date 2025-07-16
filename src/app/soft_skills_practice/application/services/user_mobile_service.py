@@ -4,7 +4,7 @@ import math
 from ..dtos.user_mobile_dtos import (
     UserLevelDTO, 
     UserAchievementDTO, 
-    UserStatsDTO,
+
     TaskCompletionResponseDTO
 )
 from ...infrastructure.persistence.repositories.simulation_session_repository import SimulationSessionRepository
@@ -19,33 +19,32 @@ class UserMobileService:
     async def get_user_level_info(self, user_id: str) -> UserLevelDTO:
         """Obtener información del nivel del usuario"""
         try:
-            # Obtener todas las sesiones del usuario
+            
             user_sessions = await self.simulation_session_repository.find_by_user_id(user_id)
             
-            # Calcular puntos totales basado en las puntuaciones
             total_points = 0
             completed_simulations = 0
             
             for session in user_sessions:
                 if session.scores.final_score and session.scores.final_score > 0:
-                    # Convertir puntuación (0-100) a puntos (0-10 por simulación)
+                    
                     points = int(session.scores.final_score / 10)
                     total_points += points
                     completed_simulations += 1
             
-            # Calcular nivel actual (cada 100 puntos = 1 nivel)
+           
             current_level = max(1, total_points // 100)
             
-            # Puntos en el nivel actual
+            
             points_in_current_level = total_points % 100
             
-            # Puntos necesarios para el siguiente nivel
+           
             points_to_next_level = 100 - points_in_current_level
             
-            # Progreso porcentual en el nivel actual
+           
             level_progress = (points_in_current_level / 100) * 100
             
-            # Número de logros (simplificado)
+            
             achievements_count = self._calculate_achievements_count(total_points, completed_simulations)
             
             return UserLevelDTO(
@@ -60,7 +59,7 @@ class UserMobileService:
             )
             
         except Exception as e:
-            # Valores por defecto para usuarios nuevos
+           
             return UserLevelDTO(
                 user_id=user_id,
                 current_level=1,
@@ -82,7 +81,7 @@ class UserMobileService:
             total_score = sum([s.scores.final_score for s in user_sessions if s.scores.final_score])
             avg_score = total_score / completed_count if completed_count > 0 else 0
             
-            # Logro por primera simulación
+           
             if completed_count >= 1:
                 achievements.append(UserAchievementDTO(
                     achievement_id="first_simulation",
@@ -93,7 +92,7 @@ class UserMobileService:
                     rarity="common"
                 ))
             
-            # Logro por 5 simulaciones
+            
             if completed_count >= 5:
                 achievements.append(UserAchievementDTO(
                     achievement_id="simulation_master",
@@ -104,7 +103,7 @@ class UserMobileService:
                     rarity="rare"
                 ))
             
-            # Logro por alta puntuación
+            
             if avg_score >= 85:
                 achievements.append(UserAchievementDTO(
                     achievement_id="high_performer",
@@ -115,7 +114,7 @@ class UserMobileService:
                     rarity="epic"
                 ))
             
-            # Logro por perfect score
+            
             perfect_scores = [s for s in user_sessions if s.scores.final_score and s.scores.final_score >= 95]
             if perfect_scores:
                 achievements.append(UserAchievementDTO(
@@ -135,27 +134,28 @@ class UserMobileService:
     async def calculate_task_completion_response(self, user_id: str, simulation_score: float) -> TaskCompletionResponseDTO:
         """Calcular respuesta de finalización de tarea para la app móvil"""
         try:
-            # Obtener info actual del usuario
+           
             current_level_info = await self.get_user_level_info(user_id)
             
-            # Calcular puntos ganados en esta simulación
-            points_earned = int(simulation_score / 10)  # Convertir score 0-100 a puntos 0-10
             
-            # Calcular nuevos totales
+            points_earned = int(simulation_score / 10)  
+            
+            
+
             new_total_points = current_level_info.total_points_earned + points_earned
             new_level = max(1, new_total_points // 100)
             
-            # Verificar si subió de nivel
+            
             level_up = new_level > current_level_info.current_level
             
-            # Calcular puntos para el siguiente nivel
+            
             points_in_new_level = new_total_points % 100
             points_to_next_level = 100 - points_in_new_level
             
-            # Verificar si desbloqueó un logro
+           
             achievement_unlocked = await self._check_new_achievement(user_id, simulation_score)
             
-            # Mensaje de celebración
+           
             if level_up:
                 celebration_message = f"🎉 Level up! You reached level {new_level}!"
             elif points_earned >= 8:
@@ -176,7 +176,7 @@ class UserMobileService:
             )
             
         except Exception as e:
-            # Respuesta por defecto
+           
             return TaskCompletionResponseDTO(
                 points_earned=int(simulation_score / 10),
                 total_points=int(simulation_score / 10),
@@ -189,13 +189,13 @@ class UserMobileService:
         """Calcular número de logros desbloqueados"""
         count = 0
         
-        # Logros basados en simulaciones completadas
+       
         if completed_simulations >= 1: count += 1
         if completed_simulations >= 5: count += 1
         if completed_simulations >= 10: count += 1
         if completed_simulations >= 25: count += 1
         
-        # Logros basados en puntos
+        
         if total_points >= 100: count += 1
         if total_points >= 500: count += 1
         if total_points >= 1000: count += 1
@@ -205,7 +205,7 @@ class UserMobileService:
     async def _check_new_achievement(self, user_id: str, simulation_score: float) -> Optional[UserAchievementDTO]:
         """Verificar si se desbloqueó un nuevo logro con esta simulación"""
         try:
-            # Por simplicidad, solo verificamos logro de alta puntuación
+            
             if simulation_score >= 95:
                 return UserAchievementDTO(
                     achievement_id="perfect_score",

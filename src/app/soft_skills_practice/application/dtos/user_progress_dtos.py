@@ -59,17 +59,17 @@ class UserOverallProgressDto(BaseModel):
     recommended_next_skills: List[str] = Field(default_factory=list)
     neglected_skills: List[str] = Field(default_factory=list)
     
-    # Estadísticas de actividad
+   
     total_sessions: int = 0
-    total_time_spent: int = 0  # minutos
+    total_time_spent: int = 0 
     average_session_duration: float = 0.0
     last_activity: Optional[datetime] = None
-    consistency_score: float = 0.0  # qué tan consistente es practicando
+    consistency_score: float = 0.0  
     
-    # Tendencias
-    improvement_trend: str = "stable"  # "improving", "declining", "stable"
-    learning_pace: str = "normal"  # "slow", "normal", "fast"
-    engagement_level: str = "medium"  # "low", "medium", "high"
+
+    improvement_trend: str = "stable" 
+    learning_pace: str = "normal"  
+    engagement_level: str = "medium" 
     
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

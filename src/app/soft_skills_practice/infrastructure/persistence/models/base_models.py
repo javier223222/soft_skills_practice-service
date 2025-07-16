@@ -30,42 +30,40 @@ class ScoresData(BaseModel):
     final_score: Optional[int] = None
     max_possible_score: int = 100
 class SessionMetadata(BaseModel):
-    difficulty_level: int = 1  # Valor por defecto
-    estimated_duration: int = 15  # Valor por defecto
+    difficulty_level: int = 1  
+    estimated_duration: int = 15 
     actual_duration: Optional[int] = None
-    platform: str = "web"  # "web" | "mobile"
+    platform: str = "web" 
     started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
 
 
 class UserBehaviorTracking(BaseModel):
-    session_duration: Optional[int] = None  # duración total en minutos
-    completion_rate: float = 0.0            # porcentaje completado (0-100)
-    abandonment_point: Optional[int] = None # en qué step abandonó
-    help_requested_count: int = 0           # cuántas veces pidió ayuda
-
+    session_duration: Optional[int] = None  
+    completion_rate: float = 0.0           
+    abandonment_point: Optional[int] = None 
+    help_requested_count: int = 0           
 
 class PreferenceIndicators(BaseModel):
     preferred_difficulty: Optional[int] = None
-    learning_pace: str = "normal"     # "slow", "normal", "fast"
+    learning_pace: str = "normal"    
 
 class PerformanceTracking(BaseModel):
-    improvement_rate: Optional[float] = None    # mejora vs sesión anterior
-    consistency_score: Optional[float] = None  # qué tan consistente fue
+    improvement_rate: Optional[float] = None    
+    consistency_score: Optional[float] = None  
     struggle_areas: List[str] = Field(default_factory=list)
     strength_areas: List[str] = Field(default_factory=list)
 
 
 class InteractionTracking(BaseModel):
-    time_to_respond: Optional[int] = None  # segundos
-    response_length: int = 0               # caracteres en la respuesta
-    help_requested: bool = False           # si pidió ayuda en este step
-
+    time_to_respond: Optional[int] = None 
+    response_length: int = 0               
+    help_requested: bool = False           
 
 class ResponseAnalysis(BaseModel):
     word_count: int = 0
     sentence_count: int = 0
-    confidence_level: Optional[int] = None   # 1-10 basado en palabras clave
+    confidence_level: Optional[int] = None   
 
 
 class EvaluationData(BaseModel):
@@ -85,7 +83,7 @@ class StepContent(BaseModel):
 
 class RecommendationTracking(BaseModel):
     """Tracking específico para generar recomendaciones"""
-    skills_practiced: List[str] = Field(default_factory=list)  # habilidades que ha practicado
+    skills_practiced: List[str] = Field(default_factory=list) 
     last_skill_practiced: Optional[str] = None
     skill_performance: Dict[str, float] = Field(default_factory=dict) 
     neglected_skills: List[str] = Field(default_factory=list)  

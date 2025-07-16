@@ -9,7 +9,8 @@ class SimulationSessionRepository(BaseRepository[SimulationSession]):
         super().__init__(SimulationSession)
     
     async def find_by_session_id(self, session_id: str) -> Optional[SimulationSession]:
-        """Buscar sesión por session_id"""
+        
+        
         return await SimulationSession.find_one(
             SimulationSession.session_id == session_id
         )

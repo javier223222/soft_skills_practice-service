@@ -22,8 +22,7 @@ class UserAchievementDTO(BaseModel):
     description: str
     icon: str
     unlocked_at: datetime
-    rarity: str  # "common", "rare", "epic", "legendary"
-
+    rarity: str 
 
 class UserStatsDTO(BaseModel):
     """DTO para estadísticas del usuario"""

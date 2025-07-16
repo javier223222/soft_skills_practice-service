@@ -14,15 +14,14 @@ class GetPaginatedScenariosBySkillUseCase:
         try:
             print("Ejecutando GetPaginatedScenariosBySkillUseCase")
            
-            # Validar que el skill_type no esté vacío
             if not skill_type or skill_type.strip() == "":
                 raise ValueError("El skill_type no puede estar vacío")
             
-            # Obtener todos los escenarios para esta skill
+            
             scenarios,total_counts = await self.scenario_repository.find_by_skill_type(skill_type,pagination_params.page, pagination_params.page_size)
             
             if not scenarios:
-                # Si no hay escenarios, retornar respuesta vacía pero válida
+               
                 pagination_meta = PaginationMetaDTO(
                     current_page=pagination_params.page,
                     page_size=pagination_params.page_size,
@@ -38,7 +37,7 @@ class GetPaginatedScenariosBySkillUseCase:
                     pagination=pagination_meta
                 )
             
-            # Convertir a DTOs
+           
             scenario_dtos = []
             for scenario in scenarios:
                 scenario_dto = ScenarioDTO(
@@ -59,17 +58,17 @@ class GetPaginatedScenariosBySkillUseCase:
                 )
                 scenario_dtos.append(scenario_dto)
             
-            # Ordenar por popularidad y uso
+            
             scenario_dtos.sort(key=lambda x: (x.is_popular, x.usage_count), reverse=True)
             
             
             
             
-            # Crear metadatos de paginación
+            
             pagination_meta = self.scenario_repository.calculate_pagination_info(
                 page=pagination_params.page,
                 limit=pagination_params.page_size,
-                total_counts=total_counts  # Total de escenarios obtenidos
+                total_counts=total_counts  
             )
             
             print(pagination_meta["total_pages"])
