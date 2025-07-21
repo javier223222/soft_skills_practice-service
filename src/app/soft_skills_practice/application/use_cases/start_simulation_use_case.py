@@ -24,14 +24,14 @@ from ...infrastructure.persistence.models.base_models import (
 )
 from ..services.gemini_service import GeminiService
 
-
 class StartSimulationUseCase:
     def __init__(
         self, 
         scenario_repository: ScenarioRepository,
         simulation_session_repository: SimulationSessionRepository,
         simulation_step_repository: SimulationStepRepository,
-        gemini_service: GeminiService
+        gemini_service: GeminiService,
+    
     ):
         self.scenario_repository = scenario_repository
         self.simulation_session_repository = simulation_session_repository

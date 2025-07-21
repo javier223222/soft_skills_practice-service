@@ -12,6 +12,7 @@ from app.soft_skills_practice.application.use_cases.get_paginated_scenarios_by_s
 
 from app.soft_skills_practice.application.use_cases.start_simulation_by_scenario_use_case import StartSimulationByScenarioUseCase
 from app.soft_skills_practice.application.use_cases.start_simulation_by_skill_use_case import StartSimulationBySkillUseCase
+from app.soft_skills_practice.application.use_cases.start_random_simulation_use_case import StartRandomSimulationUseCase
 from app.soft_skills_practice.application.use_cases.respond_simulation_use_case import RespondSimulationUseCase
 from app.soft_skills_practice.application.use_cases.get_simulation_status_use_case import GetSimulationStatusUseCase
 from app.soft_skills_practice.application.use_cases.generate_completion_feedback_use_case import GenerateCompletionFeedbackUseCase
@@ -21,7 +22,8 @@ from app.soft_skills_practice.application.dtos.simulation_dtos import (
     StartSimulationRequestDTO, 
     RespondSimulationRequestDTO,
     SimulationCompletedResponseDTO,
-    StartSimulationRequestBySoftSkillDTO
+    StartSimulationRequestBySoftSkillDTO,
+    StartSimulationRequestBaseModel
 )
 from app.soft_skills_practice.infrastructure.messaging.rabbitmq_producer import rabbitmq_producer
 from app.soft_skills_practice.infrastructure.messaging.event_publisher import EventPublisher
@@ -304,9 +306,9 @@ async def start_simulation(request: StartSimulationRequestDTO):
         simulation_session_repo = SimulationSessionRepository()
         simulation_step_repo = SimulationStepRepository()
         gemini_service = GeminiService()
-        
-       
-        start_simulation_use_case = StartSimulationByScenarioUseCase( scenario_repo,
+
+        start_simulation_use_case = StartSimulationByScenarioUseCase(
+            scenario_repo,
             simulation_session_repo,
             simulation_step_repo,
             gemini_service)
@@ -320,6 +322,38 @@ async def start_simulation(request: StartSimulationRequestDTO):
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al iniciar simulación: {str(e)}")
+
+@app.post("/simulation/softskill/random")
+async def start_random_simulation(request: StartSimulationRequestBaseModel):
+    try:
+
+        if not request.user_id or request.user_id.strip() == "":
+            raise HTTPException(status_code=400, detail="El user_id no puede estar vacío")
+        if not request.tecnical_specialization or request.tecnical_specialization.strip() == "":
+            raise HTTPException(status_code=400, detail="La especialización técnica no puede estar vacía")
+        scenario_repo = ScenarioRepository()
+        simulation_session_repo = SimulationSessionRepository()
+        simulation_step_repo = SimulationStepRepository()
+        gemini_service = GeminiService()
+        skill_catalog_repo = SkillCatalogRepository()
+        start_random_simulation_use_case=StartRandomSimulationUseCase(
+            scenario_repo,
+            simulation_session_repo,
+            simulation_step_repo,
+            gemini_service,
+            skill_catalog_repo
+        )
+        simulation_response = await start_random_simulation_use_case.execute(request)
+        return simulation_response
+    
+
+
+        
+
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al iniciar simulación aleatoria: {str(e)}")
 
 @app.post("/simulation/{session_id}/respond")
 async def respond_simulation(session_id: str, request: RespondSimulationRequestDTO):
@@ -494,9 +528,5 @@ async def get_simulation_status(session_id: str):
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener estado de simulación: {str(e)}")
-
-
-
-
 
 

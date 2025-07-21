@@ -18,6 +18,7 @@ class StartSimulationBySkillUseCase(StartSimulationUseCase):
             if not request.skill_type or request.skill_type.strip() == "":
                 raise ValueError("El skill_type no puede estar vacío")
             
+            
            
             scenario=await self._create_scenario_by_ai(request)
             session=await self._create_simulation_session(request,scenario)

@@ -2,6 +2,7 @@ import os
 import logging 
 from typing import Dict,Any,List,Optional
 from .rabbitmq_producer import RabbitMQProducer
+from datetime import datetime
 from ...application.config.app_config import config
 
 class EventPublisher:
@@ -12,13 +13,15 @@ class EventPublisher:
     
     async def publish_simulation_finished(
             self,
-            feedbackResult:Any,
+            points_earned: int,
             
     ):
         """Publicar evento de finalización de simulación"""
         message = {
             "event": "simulation_finished",
-            "data": feedbackResult
+            "type": "simulation",
+            "created_at": str(datetime.utcnow()),
+            "points_earned": points_earned,
         }
         
         try:
