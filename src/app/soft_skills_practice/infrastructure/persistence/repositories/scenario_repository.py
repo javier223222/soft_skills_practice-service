@@ -144,6 +144,7 @@ class ScenarioRepository(BaseRepository[Scenario]):
         new_scenario=Scenario(**scenario)
         await new_scenario.insert()
         return new_scenario
+    
 
         
         

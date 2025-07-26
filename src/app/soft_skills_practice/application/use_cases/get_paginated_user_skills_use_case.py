@@ -17,7 +17,7 @@ class GetPaginatedUserSkillsUseCase:
         try:
             
             if not user_id or user_id.strip() == "":
-                raise ValueError("El user_id no puede estar vacío")
+                raise ValueError("the user_id cannot be empty")
             
            
             all_skills = await self.skill_catalog_repository.find_active_skills()
@@ -81,7 +81,7 @@ class GetPaginatedUserSkillsUseCase:
             
            
             if pagination_params.page > total_pages and total_items > 0:
-                raise ValueError(f"Página {pagination_params.page} no existe. Total de páginas: {total_pages}")
+                raise ValueError(f"Page {pagination_params.page} does not exist. Total pages: {total_pages}")
             
             
             start_index = (pagination_params.page - 1) * pagination_params.page_size
@@ -105,4 +105,4 @@ class GetPaginatedUserSkillsUseCase:
             )
             
         except Exception as e:
-            raise Exception(f"Error al obtener skills paginadas: {str(e)}")
+            raise Exception(f"Error fetching paginated skills: {str(e)}")

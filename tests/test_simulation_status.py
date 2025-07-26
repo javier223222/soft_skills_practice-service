@@ -16,23 +16,23 @@ def test_simulation_status():
     
     response = requests.post(f"{base_url}/simulation/start", json=start_data)
     if response.status_code != 200:
-        print(f"❌ Error al iniciar simulación: {response.status_code}")
+        print(f"❌ Error starting simulation: {response.status_code}")
         return
     
     start_result = response.json()
     session_id = start_result["session_id"]
-    print(f"✅ Simulación iniciada - Session ID: {session_id}")
+    print(f"✅ Simulation started - Session ID: {session_id}")
     
-    # 2. Probar estado inicial
-    print(f"\n2. 📊 Obteniendo estado inicial...")
+    # 2. Test initial status
+    print(f"\n2. 📊 Getting initial status...")
     response = requests.get(f"{base_url}/simulation/{session_id}/status")
     if response.status_code != 200:
-        print(f"❌ Error al obtener estado: {response.status_code}")
+        print(f"❌ Error getting status: {response.status_code}")
         print(response.text)
         return
     
     status_result = response.json()
-    print(f"✅ Estado obtenido exitosamente")
+    print(f"✅ Status obtained successfully")
     print(f"📈 Progreso: {status_result['progress_summary']['progress_percentage']}%")
     print(f"⏱️ Tiempo transcurrido: {status_result['progress_summary']['time_spent_minutes']} min")
     print(f"🎯 Estado: {status_result['progress_summary']['status_description']}")

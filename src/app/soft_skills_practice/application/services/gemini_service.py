@@ -89,96 +89,97 @@ class GeminiService:
     def _build_scenario_prompt(self, skill_type: str, difficulty_level: int) -> str:
         """Construir prompt para generar escenarios"""
         return f"""
-        Eres un experto en desarrollo de habilidades blandas. Genera un escenario de práctica realista para la habilidad "{skill_type}" con nivel de dificultad {difficulty_level}/5.
+        You are an expert in soft skills development. Generate a realistic practice scenario for the skill "{skill_type}" with a difficulty level of {difficulty_level}/5.
 
-        El escenario debe incluir:
-        1. Un título atractivo y descriptivo
-        2. Una descripción detallada de la situación
-        3. El contexto (lugar, participantes, objetivos)
-        4. Una situación específica que requiera usar la habilidad "{skill_type}"
-        5. Duración estimada en minutos
+        The scenario must include:
+        1. An attractive and descriptive title
+        2. A detailed description of the situation
+        3. The context (location, participants, objectives)
+        4. A specific situation that requires using the skill "{skill_type}"
+        5. Estimated duration in minutes
 
-        Responde ÚNICAMENTE en formato JSON con esta estructura:
-    {{
-        "title": "Título del escenario",
-        "description": "Descripción detallada de la situación",
+        Respond ONLY in JSON format with this structure:
+        {{
+        "title": "Scenario title",
+        "description": "Detailed description of the situation",
         "context": {{
-            "setting": "Lugar donde ocurre",
-            "participants": ["Rol 1", "Rol 2"],
-            "objective": "Objetivo principal del escenario"
+            "setting": "Location where it takes place",
+            "participants": ["Role 1", "Role 2"],
+            "objective": "Main objective of the scenario"
         }},
-    "estimated_duration": 15,
-    "initial_situation": "Situación inicial que presenta el desafío"
-    }}
+        "estimated_duration": 15,
+        "initial_situation": "Initial situation presenting the challenge"
+        }}
 
-Asegúrate de que el escenario sea:
-- Realista y profesional
-- Apropiado para el nivel de dificultad {difficulty_level}
-- Específico para la habilidad "{skill_type}"
-- Que requiera una respuesta activa del usuario
-"""
+    Make sure the scenario is:
+    - Realistic and professional
+    - Appropriate for difficulty level {difficulty_level}
+    - Specific to the skill "{skill_type}"
+    - Requires an active response from the user
+    """
 
 
 
     def _build_evaluation_prompt(self, scenario_context: str, user_response: str, skill_type: str) -> str:
         """Construir prompt para evaluar respuestas"""
         return f"""
-Eres un experto evaluador de habilidades blandas. Evalúa la siguiente respuesta del usuario a un escenario de práctica.
+    You are an expert evaluator of soft skills. Evaluate the following user response to a practice scenario.
 
-CONTEXTO DEL ESCENARIO:
-{scenario_context}
+    SCENARIO CONTEXT:
+    {scenario_context}
 
-HABILIDAD A EVALUAR: {skill_type}
+    SKILL TO EVALUATE: {skill_type}
 
-RESPUESTA DEL USUARIO:
-{user_response}
+    USER RESPONSE:
+    {user_response}
 
-Evalúa la respuesta considerando:
-1. Aplicación efectiva de la habilidad "{skill_type}"
-2. Claridad y estructura de la comunicación
-3. Consideración de las partes involucradas
-4. Viabilidad de la solución propuesta
-5. Profesionalismo y tono apropiado
+    Evaluate the response considering:
+    1. Effective application of the skill "{skill_type}"
+    2. Clarity and structure of communication
+    3. Consideration of the stakeholders involved
+    4. Feasibility of the proposed solution
+    5. Professionalism and appropriate tone
 
-Responde ÚNICAMENTE en formato JSON:
-{{
-    "overall_score": 85,
-    "criteria_scores": {{
+    Respond ONLY in JSON format:
+    {{
+        "overall_score": 85,
+        "criteria_scores": {{
         "skill_application": 80,
         "communication_clarity": 90,
         "stakeholder_consideration": 85,
         "solution_viability": 80,
         "professionalism": 90
-    }},
-    "strengths": ["Fortaleza 1", "Fortaleza 2"],
-    "areas_for_improvement": ["Área 1", "Área 2"],
-    "specific_feedback": "Comentarios específicos sobre la respuesta"
-}}
+        }},
+        "strengths": ["Strength 1", "Strength 2"],
+        "areas_for_improvement": ["Area 1", "Area 2"],
+        "specific_feedback": "Specific comments about the response"
+    }}
 
-Puntuación: 0-100 donde 100 es excelente.
-"""
+    Score: 0-100 where 100 is excellent.
+    """
 
 
     def _build_feedback_prompt(self, evaluation_result: Dict[str, Any]) -> str:
-        """Construir prompt para generar feedback"""
+        """Build prompt to generate feedback"""
         return f"""
-Basándote en esta evaluación, genera feedback constructivo y motivador:
+    Based on this evaluation, generate constructive and motivating feedback:
 
-EVALUACIÓN:
-{json.dumps(evaluation_result, indent=2)}
+    EVALUATION:
+    {json.dumps(evaluation_result, indent=2)}
 
-Genera un feedback que:
-1. Reconozca las fortalezas específicas
-2. Proporcione sugerencias concretas de mejora
-3. Sea motivador y constructivo
-4. Incluya ejemplos específicos cuando sea posible
-5. Termine con una recomendación para seguir practicando
+    Generate feedback that:
+    1. Recognizes specific strengths
+    2. Provides concrete suggestions for improvement
+    3. Is motivating and constructive
+    4. Includes specific examples when possible
+    5. Ends with a recommendation to continue practicing
 
-El feedback debe ser personalizado, profesional y enfocado en el crecimiento.
-"""
+    The feedback should be personalized, professional, and focused on growth.
+    """
     def _parse_scenario_response(self, response_text: str) -> Dict[str, Any]:
         """Parsear respuesta JSON del escenario"""
         try:
+
             
             cleaned_response = response_text.strip()
             if cleaned_response.startswith('```json'):
@@ -187,9 +188,7 @@ El feedback debe ser personalizado, profesional y enfocado en el crecimiento.
                 cleaned_response = cleaned_response[:-3]
             
             
-            cleaned_response = cleaned_response.replace('\n', ' ')
-            cleaned_response = ' '.join(cleaned_response.split())
-            cleaned_response = cleaned_response.replace('\"', '"') 
+       
              
             
             return json.loads(cleaned_response.strip())
@@ -201,7 +200,7 @@ El feedback debe ser personalizado, profesional y enfocado en el crecimiento.
     def _parse_evaluation_response(self, response_text: str) -> Dict[str, Any]:
         """Parsear respuesta JSON de la evaluación"""
         try:
-            # Limpiar la respuesta si contiene markdown
+            
             cleaned_response = response_text.strip()
             if cleaned_response.startswith('```json'):
                 cleaned_response = cleaned_response[7:]

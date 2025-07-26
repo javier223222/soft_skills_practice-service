@@ -12,12 +12,12 @@ class StartSimulationBySkillUseCase(StartSimulationUseCase):
         try:
            
             if not request.user_id or request.user_id.strip() == "":
-                raise ValueError("El user_id no puede estar vacío")
+                raise ValueError("the user_id cannot be empty")
             
             
             if not request.skill_type or request.skill_type.strip() == "":
-                raise ValueError("El skill_type no puede estar vacío")
-            
+                raise ValueError("the skill_type cannot be empty")
+
             
            
             scenario=await self._create_scenario_by_ai(request)
@@ -56,8 +56,8 @@ class StartSimulationBySkillUseCase(StartSimulationUseCase):
                     started_at=session.session_metadata.started_at,
                     difficulty_level=session.session_metadata.difficulty_level
                 ),
-                message="Simulación iniciada exitosamente. Complete el test inicial para continuar.",
-                skill_focus=[scenario.skill_type],  
+                message="Simulation started successfully. Please complete the initial test to continue.",
+                skill_focus=[scenario.skill_type],
                 scenario_metadata={
                     "estimated_duration_minutes": scenario.estimated_duration,
                     "skill_focus": [scenario.skill_type],
@@ -77,4 +77,4 @@ class StartSimulationBySkillUseCase(StartSimulationUseCase):
             
         
         except Exception as e:
-            raise Exception(f"Error al iniciar simulación por soft skill: {str(e)}")
+            raise Exception(f"Error initiating simulation by soft skill:     {str(e)}")

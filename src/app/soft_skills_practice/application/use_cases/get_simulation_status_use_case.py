@@ -41,12 +41,12 @@ class GetSimulationStatusUseCase:
            
             session = await self.simulation_session_repository.find_by_session_id(session_id)
             if not session:
-                raise ValueError(f"Sesión {session_id} no encontrada")
+                raise ValueError(f"Sesión {session_id} is not found")
            
             scenario = await self.scenario_repository.find_by_id(session.scenario_id)
             if not scenario:
-                raise ValueError(f"Escenario {session.scenario_id} no encontrado")
-            
+                raise ValueError(f"Escenario {session.scenario_id} is not found")
+
             
             steps = await self.simulation_step_repository.find_by_session_id(session_id)
             steps.sort(key=lambda x: x.step_number)
@@ -64,7 +64,7 @@ class GetSimulationStatusUseCase:
                 difficulty_level=session.session_metadata.difficulty_level
             )
             
-            # 5. Información del escenario
+            
             scenario_info = {
                 "scenario_id": str(scenario.id),
                 "title": scenario.title,
@@ -147,8 +147,8 @@ class GetSimulationStatusUseCase:
             )
             
         except Exception as e:
-            raise Exception(f"Error al obtener estado de simulación: {str(e)}")
-    
+            raise Exception(f"Error fetching simulation status: {str(e)}")
+
     def _calculate_estimated_completion(self, session, steps) -> int:
         """Calcular tiempo estimado para completar (en minutos)"""
         completed_steps = len([s for s in steps if s.content.user_response])
@@ -170,16 +170,16 @@ class GetSimulationStatusUseCase:
         return max(1, int(time_diff.total_seconds() / 60))
     
     def _get_status_description(self, status: str, completed: int, total: int) -> str:
-        """Generar descripción del estado"""
+        """Generate status description"""
         if status == "started":
-            return "Simulación iniciada - Esperando respuesta al test inicial"
+            return "Simulation started - Waiting for initial test response"
         elif status == "pre_test":
-            return "Completando test inicial"
+            return "Completing initial test"
         elif status == "simulation":
-            return f"En progreso - Paso {completed} de {total}"
+            return f"In progress - Step {completed} of {total}"
         elif status == "completed":
-            return "Simulación completada exitosamente"
+            return "Simulation successfully completed"
         elif status == "abandoned":
-            return "Simulación abandonada"
+            return "Simulation abandoned"
         else:
-            return f"Estado: {status}"
+            return f"Status: {status}"

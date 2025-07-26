@@ -49,4 +49,4 @@ class GetScenariosBySkillUseCase:
             )
             
         except Exception as e:
-            raise Exception(f"Error al obtener escenarios para {skill_type}: {str(e)}")
+            raise Exception(f"Error fetching scenarios for {skill_type}: {str(e)}")

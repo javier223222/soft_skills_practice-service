@@ -11,7 +11,7 @@ class StartSimulationByScenarioUseCase(StartSimulationUseCase):
             scenario = await self._get_scenario(request.scenario_id)
             
             if not scenario:
-                raise ValueError(f"Escenario {request.scenario_id} no encontrado")
+                raise ValueError(f"Escenario {request.scenario_id} not found")
             
             
             session = await self._create_simulation_session(request, scenario)
@@ -21,7 +21,7 @@ class StartSimulationByScenarioUseCase(StartSimulationUseCase):
             
             
             initial_step = await self._create_initial_step(session, initial_test)
-            print(f"Paso inicial creado", initial_step)
+            print(f"initial step was crreated ", initial_step)
         
             
             response = StartSimulationResponseDTO(
@@ -56,7 +56,7 @@ class StartSimulationByScenarioUseCase(StartSimulationUseCase):
                     started_at=session.session_metadata.started_at,
                     difficulty_level=session.session_metadata.difficulty_level
                 ),
-                message="Simulación iniciada exitosamente. Complete el test inicial para continuar.",
+                message="Simulation started successfully. Please complete the initial test to continue. ",
                 skill_focus=[scenario.skill_type],  
                 scenario_metadata={
                     "estimated_duration_minutes": scenario.estimated_duration,
@@ -73,4 +73,4 @@ class StartSimulationByScenarioUseCase(StartSimulationUseCase):
             return response
             
         except Exception as e:
-            raise Exception(f"Error al iniciar simulación: {str(e)}")
+            raise Exception(f"Error initiating simulation: {str(e)}")

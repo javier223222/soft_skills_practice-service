@@ -72,3 +72,7 @@ class SkillCatalogRepository(BaseRepository[SkillCatalog]):
             return existing
         
         return await self.create_skill(skill_data)
+    async def delete_all_skills(self) -> None:
+        
+        await SkillCatalog.delete_all()
+        

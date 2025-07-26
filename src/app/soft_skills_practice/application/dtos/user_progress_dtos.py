@@ -74,7 +74,7 @@ class UserOverallProgressDto(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class UserProgressResponseDto(BaseModel):
-    """DTO para respuesta completa de progreso de usuario"""
+  
     success: bool = True
     message: str = "User progress retrieved successfully"
     data: UserOverallProgressDto

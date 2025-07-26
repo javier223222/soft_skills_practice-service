@@ -79,7 +79,7 @@ class GetPopularScenariosUseCase:
             
             }
         except Exception as e:
-            raise Exception(f"Error al obtener escenarios paginados: {str(e)}")
+            raise Exception(f"Error fetching popular scenarios: {str(e)}")
 
 
 

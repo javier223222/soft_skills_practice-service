@@ -42,35 +42,35 @@ class StartSimulationUseCase:
     
     async def _create_scenario_by_ai(self,request:StartSimulationRequestBySoftSkillDTO):
         try:
-            prompt =  f"""
-Eres un experto en diseño de simulaciones interactivas para el desarrollo de habilidades blandas.
+            prompt =  prompt = f"""
+You are an expert in designing interactive simulations for soft skills development.
 
-Genera un escenario de práctica realista que ayude al usuario a fortalecer la habilidad blanda: "{request.skill_type}". 
-El escenario debe adaptarse a las siguientes características del usuario:
-- Especialización técnica: "{request.tecnical_specialization}"
-- Nivel de seniority: "{request.seniority_level}"
-- Nivel de dificultad deseado: {request.difficulty_preference} (escala del 1 al 5)
+Generate a realistic practice scenario that helps the user strengthen the soft skill: "{request['skill_type']}". 
+The scenario must adapt to the following user characteristics:
+- Technical specialization: "{request['tecnical_specialization']}"
+- Seniority level: "{request['seniority_level']}"
+- Desired difficulty level: {request['difficulty_preference']} (scale from 1 to 5)
 
-Crea un escenario que cumpla los siguientes requisitos:
-1. Sea relevante para la habilidad blanda indicada.
-2. Presente una situación realista del entorno laboral, sin enfocarse en aspectos técnicos.
-3. Permita al usuario interactuar en una simulación tipo chat de texto.
-4. Esté completamente enfocado en el desarrollo de la habilidad blanda, sin incluir retos técnicos.
+Scenario requirements:
+1. Direct relevance to the indicated soft skill.
+2. Set in a realistic work situation, without technical challenges.
+3. Designed for a text-based chat simulation.
+4. Must allow for decision-making and reflection.
+5. Maximum estimated duration: 20 minutes.
+6. ALL CONTENT MUST BE IN ENGLISH ONLY.
 
-La salida debe estar en el siguiente formato JSON, sin comentarios ni explicaciones adicionales:
+Return only a valid JSON, without explanations, without headers, without single quotes. Make sure it is well-formed.
+
+JSON:
 {{
-  "title": "Título del escenario",
-  "description": "Descripción general del contexto del escenario",
-  "difficulty_level": {request.difficulty_preference},
-  "estimated_duration": Duración estimada en minutos ,
-  "steps":Numero de pasos de la simulación debe ser siempre  mayor a 4 ,
-  "initial_situation": "Situación inicial que presenta el reto o dilema al usuario",
-  "tags": ["etiquetas", "relacionadas", "a la habilidad"]
+  "title": "Scenario title",
+  "description": "General description of the scenario context",
+  "difficulty_level": {request['difficulty_preference']},
+  "estimated_duration": "Estimated duration in minutes only a integer",
+  "steps": "number of steps to follow always 5",
+  "initial_situation": "Initial situation that presents the challenge or dilemma to the user",
+  "tags": ["tags", "related", "to the skill"]
 }}
-
-Este escenario debe invitar a la reflexión, toma de decisiones o análisis, y enfocarse únicamente en poner a prueba la habilidad blanda: "{request.skill_type}".
-no debe durar mas de 20 minutos en completarse.
-
 """
             response = await self.gemini_service._generate_content(prompt)
             scenario_data = self.gemini_service._parse_scenario_response(response.content)
@@ -144,34 +144,31 @@ no debe durar mas de 20 minutos en completarse.
         """Generar test inicial con IA para evaluar nivel base del usuario"""
         
         
-        prompt = f"""
-Eres un experto en evaluación de soft skills. Genera un test inicial para evaluar el nivel base del usuario en la habilidad "{scenario.skill_type}" antes de comenzar la simulación.
+        prompt = """You are an expert in soft skills assessment. Generate an initial test to evaluate the user's baseline level in "{skill_type}" before starting the simulation.
 
-CONTEXTO DEL ESCENARIO:
-- Título: {scenario.title}
-- Descripción: {scenario.description}
-- Situación inicial: {scenario.initial_situation}
-- Nivel de dificultad: {scenario.difficulty_level}/5
+SCENARIO CONTEXT:
+- Title: {title}
+- Description: {description}
+- Initial situation: {initial_situation}
+- Difficulty level: {difficulty_level}/5
 
+Create an initial assessment that:
+1. Evaluates user's prior knowledge about the skill based on their technical specialization "{technical_specialization}" and seniority level "{seniority_level}"
+2. Is relevant to the scenario context
+3. Helps personalize the simulation experience
+4. Takes 3-5 minutes to complete
 
-Genera un test inicial que:
-1. Evalúe el conocimiento previo del usuario sobre la habilidad en base a su area de especializacion tecnica que es "{request.tecnical_specialization}" y su seniority level "{request.seniority_level}"
-2. Sea relevante al contexto del escenario
-3. Ayude a personalizar la experiencia de simulación
-4. Tome entre 3-5 minutos en responder
-
-Responde ÚNICAMENTE en formato JSON:
+Return ONLY valid JSON format:
 {{
-    "question": "Pregunta principal del test inicial",
-    "context": "Contexto específico para la pregunta",
-    "instructions": "Instrucciones claras para el usuario",
-    "expected_skills": ["{scenario.skill_type}"],
-    "estimated_time_minutes": 5,
-    "evaluation_criteria": ["criterio1", "criterio2", "criterio3"]
+    "question": "Main assessment question",
+    "context": "Specific context for the question",
+    "instructions": "Clear instructions for the user",
+    "expected_skills": ["{skill_type}"],
+    "estimated_time_minutes": 4,
+    "evaluation_criteria": ["criterion1", "criterion2", "criterion3"]
 }}
 
-La pregunta debe ser abierta y permitir evaluar la experiencia previa del usuario.
-"""
+The question must be open-ended and allow evaluation of the user's previous experience."""
 
         try:
             response = await self.gemini_service._generate_content(prompt)
@@ -180,14 +177,7 @@ La pregunta debe ser abierta y permitir evaluar la experiencia previa del usuari
             return initial_test_data
         except Exception as e:
            
-            return {
-                "question": f"Antes de comenzar con el escenario '{scenario.title}', cuéntanos sobre tu experiencia previa con {scenario.skill_type}. ¿Has enfrentado situaciones similares antes? ¿Cómo las manejaste?",
-                "context": f"Vamos a trabajar en un escenario sobre {scenario.skill_type}. Tu respuesta nos ayudará a personalizar la experiencia.",
-                "instructions": "Responde de forma honesta y detallada. No hay respuestas correctas o incorrectas, solo queremos conocer tu punto de partida.",
-                "expected_skills": [scenario.skill_type],
-                "estimated_time_minutes": 5,
-                "evaluation_criteria": ["experiencia_previa", "autoconciencia", "reflexion"]
-            }
+            raise Exception(f"Error generating initial test: {str(e)}")
     
     async def _create_initial_step(self, session: SimulationSession, initial_test: Dict[str, Any]) -> SimulationStep:
         """Crear el paso inicial del test"""

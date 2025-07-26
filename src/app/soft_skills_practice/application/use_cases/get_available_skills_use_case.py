@@ -34,4 +34,4 @@ class GetAvailableSkillsUseCase:
             )
             
         except Exception as e:
-            raise Exception(f"Error al obtener skills disponibles: {str(e)}")
+            raise Exception(f"Error getting available skills: {str(e)}")

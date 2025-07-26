@@ -103,11 +103,11 @@ async def get_user_soft_skills_progress(
 
 ):
     """
-    Obtener todas las soft skills disponibles con el progreso del usuario (paginado)
+    Get all available soft skills with user progress (paginated)
     
-    - Si es un usuario nuevo (sin sesiones previas), se auto-registra implícitamente
-    - Retorna skills con progress_percentage = 0.0 para usuarios nuevos
-    - Soporte para paginación con parámetros page y page_size
+    - If it's a new user (without previous sessions), auto-registers implicitly
+    - Returns skills with progress_percentage = 0.0 for new users
+    - Support for pagination with page and page_size parameters
     - page: número de página (inicia en 1)
     - page_size: elementos por página (máximo 100)
     """
@@ -149,7 +149,7 @@ async def get_user_soft_skills_progress(
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener soft skills: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting soft skills: {str(e)}")
 
 
 
@@ -198,7 +198,7 @@ async def get_paginated_scenarios_by_skill(
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener escenarios paginados: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting paginated scenarios: {str(e)}")
 
 
 @app.get("/popular/scenarios")
@@ -273,7 +273,7 @@ async def start_softskill_simulation(request:StartSimulationRequestBySoftSkillDT
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al iniciar simulación de soft skill: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting soft skill simulation: {str(e)}")
     
     
    
@@ -321,7 +321,7 @@ async def start_simulation(request: StartSimulationRequestDTO):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al iniciar simulación: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting simulation: {str(e)}")
 
 @app.post("/simulation/softskill/random")
 async def start_random_simulation(request: StartSimulationRequestBaseModel):
@@ -353,7 +353,7 @@ async def start_random_simulation(request: StartSimulationRequestBaseModel):
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al iniciar simulación aleatoria: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting random simulation: {str(e)}")
 
 @app.post("/simulation/{session_id}/respond")
 async def respond_simulation(session_id: str, request: RespondSimulationRequestDTO):
@@ -471,18 +471,18 @@ async def respond_simulation(session_id: str, request: RespondSimulationRequestD
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al procesar respuesta de simulación: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing simulation response: {str(e)}")
 
 @app.get("/simulation/{session_id}/status")
 async def get_simulation_status(session_id: str):
     """
-    Obtener el estado completo de una simulación
+    Get complete status of a simulation
     
-    - Información detallada de la sesión y progreso
-    - Historial completo de pasos y respuestas
-    - Evaluaciones y feedback recibido
-    - Métricas de tiempo y rendimiento
-    - Estado actual y siguiente acción recomendada
+    - Detailed session information and progress
+    - Complete history of steps and responses
+    - Evaluations and feedback received
+    - Time and performance metrics
+    - Current status and recommended next action
     """
     try:
         
@@ -527,6 +527,6 @@ async def get_simulation_status(session_id: str):
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener estado de simulación: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error getting simulation status: {str(e)}")
 
 

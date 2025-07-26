@@ -1,106 +1,104 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Script para poblar la base de datos con escenarios de ejemplo
-"""
+
 import asyncio
 import sys
 import os
+from dotenv import load_dotenv
 
-# Agregar src al path
+
+load_dotenv()
+
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from app.soft_skills_practice.infrastructure.persistence.database import db_connection
 from app.soft_skills_practice.infrastructure.persistence.models.simulation_models import Scenario
 
-# Escenarios de ejemplo por skill - Enfocados en profesionales de TI
+
 SCENARIOS_DATA = [
-    # Escenarios para Escucha Activa (active_listening)
     {
         "skill_type": "active_listening",
-        "title": "Daily Standup con Conflictos Tecnicos",
-        "description": "Facilita un daily standup donde dos desarrolladores discrepan sobre la arquitectura del microservicio",
+        "title": "Daily Standup with Technical Conflicts",
+        "description": "Facilitate a daily standup where two developers disagree about the microservice architecture.",
         "difficulty_level": 2,
         "estimated_duration": 15,
-        "initial_situation": "En el daily standup, el desarrollador senior cuestiona la decision de usar MongoDB mientras el desarrollador junior defiende su eleccion tecnica. Como Scrum Master necesitas...",
+        "initial_situation": "In the daily standup, the senior developer questions the decision to use MongoDB while the junior developer defends their technical choice. As Scrum Master you need to...",
         "scenario_icon": "fas fa-code-branch",
         "scenario_color": "#4CAF50",
         "is_popular": True,
-        "tags": ["scrum", "arquitectura", "team management"]
+        "tags": ["scrum", "architecture", "team management"]
     },
     {
         "skill_type": "active_listening",
-        "title": "Cliente no Entiende Limitaciones Tecnicas",
-        "description": "Explica a un cliente por que su requerimiento no es tecnicamente viable en el tiempo solicitado",
+        "title": "Client Does Not Understand Technical Limitations",
+        "description": "Explain to a client why their requirement is not technically feasible in the requested time.",
         "difficulty_level": 3,
         "estimated_duration": 20,
-        "initial_situation": "El cliente insiste en que necesita integracion en tiempo real con 15 APIs externas en 2 semanas, pero tecnicamente es imposible...",
+        "initial_situation": "The client insists they need real-time integration with 15 external APIs in 2 weeks, but technically it is impossible...",
         "scenario_icon": "fas fa-user-tie",
         "scenario_color": "#FF9800",
         "is_popular": True,
-        "tags": ["cliente", "limitaciones tecnicas", "expectativas"]
+        "tags": ["client", "technical limitations", "expectations"]
     },
-    
-    # Escenarios para Hablar en Publico (public_speaking)
+
+
     {
         "skill_type": "public_speaking",
-        "title": "Demo de Sprint a Stakeholders",
-        "description": "Presenta los resultados del sprint a stakeholders no tecnicos que no entienden el valor del refactoring",
+        "title": "Sprint Demo to Stakeholders",
+        "description": "Present the sprint results to non-technical stakeholders who do not understand the value of refactoring.",
         "difficulty_level": 3,
         "estimated_duration": 20,
-        "initial_situation": "Debes explicar por que el 60% del sprint se dedico a refactoring y deuda tecnica a stakeholders que solo quieren ver nuevas features...",
+        "initial_situation": "You must explain why 60% of the sprint was dedicated to refactoring and technical debt to stakeholders who only want to see new features...",
         "scenario_icon": "fas fa-presentation",
         "scenario_color": "#2196F3",
         "is_popular": True,
-        "tags": ["demo", "stakeholders", "deuda tecnica"]
+        "tags": ["demo", "stakeholders", "technical debt"]
     },
     {
         "skill_type": "public_speaking",
-        "title": "Presentacion de Arquitectura Cloud",
-        "description": "Presenta la migracion a microservicios en AWS a un comite tecnico senior",
+        "title": "Cloud Architecture Presentation",
+        "description": "Present the migration to microservices on AWS to a senior technical committee.",
         "difficulty_level": 4,
         "estimated_duration": 25,
-        "initial_situation": "Debes convencer al comite tecnico de migrar el monolito legacy a microservicios en AWS, justificando costos y riesgos...",
+        "initial_situation": "You must convince the technical committee to migrate the legacy monolith to microservices on AWS, justifying costs and risks...",
         "scenario_icon": "fas fa-cloud",
         "scenario_color": "#9C27B0",
         "is_popular": True,
-        "tags": ["cloud", "arquitectura", "migracion"]
+        "tags": ["cloud", "architecture", "migration"]
     },
-    
-    # Escenarios para Liderazgo (team_motivation)
+
+
     {
         "skill_type": "team_motivation",
-        "title": "Equipo Quemado por Crunch",
-        "description": "Motiva a tu equipo de desarrollo despues de 3 meses de releases urgentes y hotfixes",
+        "title": "Team Burned Out by Crunch",
+        "description": "Motivate your development team after 3 months of urgent releases and hotfixes.",
         "difficulty_level": 4,
         "estimated_duration": 20,
-        "initial_situation": "Tu equipo ha trabajado fines de semana durante 3 meses arreglando bugs criticos en produccion. La moral esta por el suelo y hay riesgo de renuncias...",
+        "initial_situation": "Your team has worked weekends for 3 months fixing critical bugs in production. Morale is very low and there is a risk of resignations...",
         "scenario_icon": "fas fa-battery-empty",
         "scenario_color": "#F44336",
         "is_popular": True,
-        "tags": ["burnout", "crunch", "retencion"]
+        "tags": ["burnout", "crunch", "retention"]
     },
     {
         "skill_type": "team_motivation",
-        "title": "Junior Developer Frustrado",
-        "description": "Ayuda a un desarrollador junior que se siente abrumado por la complejidad del codigo legacy",
+        "title": "Frustrated Junior Developer",
+        "description": "Help a junior developer who feels overwhelmed by the complexity of legacy code.",
         "difficulty_level": 2,
         "estimated_duration": 15,
-        "initial_situation": "Un developer junior esta frustrado porque no entiende el codigo legacy de 10 anos y siente que no esta contribuyendo al equipo...",
+        "initial_situation": "A junior developer is frustrated because they do not understand the 10-year-old legacy code and feel they are not contributing to the team...",
         "scenario_icon": "fas fa-seedling",
         "scenario_color": "#4CAF50",
         "is_popular": True,
         "tags": ["junior", "mentoring", "legacy code"]
     },
-    
-    # Escenarios para Resolucion de Conflictos (conflict_resolution)
+
+
     {
         "skill_type": "conflict_resolution",
-        "title": "DevOps vs Development sobre CI/CD",
-        "description": "Resuelve tension entre DevOps que quiere automatizar todo y developers que prefieren deployments manuales",
+        "title": "DevOps vs Development on CI/CD",
+        "description": "Resolve tension between DevOps who want to automate everything and developers who prefer manual deployments.",
         "difficulty_level": 3,
         "estimated_duration": 25,
-        "initial_situation": "El equipo de DevOps implemento un pipeline CI/CD estricto, pero los developers se quejan de que es muy lento y prefieren deployments manuales rapidos...",
+        "initial_situation": "The DevOps team implemented a strict CI/CD pipeline, but developers complain that it is too slow and prefer fast manual deployments...",
         "scenario_icon": "fas fa-cogs",
         "scenario_color": "#FF5722",
         "is_popular": True,
@@ -108,39 +106,39 @@ SCENARIOS_DATA = [
     },
     {
         "skill_type": "conflict_resolution",
-        "title": "QA vs Development sobre Testing",
-        "description": "Media entre QA que reporta muchos bugs y developers que dicen que los casos de prueba son irreales",
+        "title": "QA vs Development on Testing",
+        "description": "Mediate between QA who reports many bugs and developers who say the test cases are unrealistic.",
         "difficulty_level": 3,
         "estimated_duration": 20,
-        "initial_situation": "QA esta reportando 50 bugs por sprint, pero los developers argumentan que muchos son edge cases que nunca ocurren en produccion real...",
+        "initial_situation": "QA is reporting 50 bugs per sprint, but developers argue that many are edge cases that never occur in real production...",
         "scenario_icon": "fas fa-bug",
         "scenario_color": "#9C27B0",
         "is_popular": True,
         "tags": ["qa", "testing", "quality"]
     },
-    
-    # Escenarios para Comunicacion Escrita (written_communication)
+
+
     {
         "skill_type": "written_communication",
-        "title": "Documentacion de API Critica",
-        "description": "Documenta una API compleja para que otros equipos puedan integrarla sin consultas constantes",
+        "title": "Critical API Documentation",
+        "description": "Document a complex API so other teams can integrate it without constant questions.",
         "difficulty_level": 3,
         "estimated_duration": 25,
-        "initial_situation": "Desarrollaste una API de facturacion critica y otros 5 equipos necesitan integrarla. Debes crear documentacion que evite 20 preguntas diarias...",
+        "initial_situation": "You developed a critical billing API and 5 other teams need to integrate it. You must create documentation that avoids 20 daily questions...",
         "scenario_icon": "fas fa-file-code",
         "scenario_color": "#2196F3",
         "is_popular": True,
-        "tags": ["documentacion", "api", "integracion"]
+        "tags": ["documentation", "api", "integration"]
     },
-    
-    # Escenarios para Toma de Decisiones (decision_making)
+
+
     {
         "skill_type": "decision_making",
-        "title": "Elegir Stack Tecnologico para MVP",
-        "description": "Decide el stack tecnologico para un MVP con timeline agresivo y equipo mixto junior/senior",
+        "title": "Choose Tech Stack for MVP",
+        "description": "Decide the tech stack for an MVP with an aggressive timeline and a mixed junior/senior team.",
         "difficulty_level": 4,
         "estimated_duration": 30,
-        "initial_situation": "Tienes 3 meses para lanzar un MVP, equipo de 2 seniors y 3 juniors, y debes elegir entre React/Node.js, Angular/.NET o Vue/Python...",
+        "initial_situation": "You have 3 months to launch an MVP, a team of 2 seniors and 3 juniors, and must choose between React/Node.js, Angular/.NET or Vue/Python...",
         "scenario_icon": "fas fa-code",
         "scenario_color": "#FF9800",
         "is_popular": True,
@@ -157,6 +155,11 @@ async def populate_scenarios():
         
         created_count = 0
         updated_count = 0
+        # Eliminar todos los escenarios existentes antes de poblar
+        deleted =await Scenario.delete_all()
+
+        print(f"🗑️ Escenarios eliminados: {deleted.deleted_count}")
+
         
         for scenario_data in SCENARIOS_DATA:
             # Verificar si ya existe un escenario similar

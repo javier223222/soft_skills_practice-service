@@ -5,13 +5,13 @@ from typing import List, Optional
 from .scenario_dtos import ScenarioDTO
 
 class PaginationParamsDTO(BaseModel):
-    """DTO para parámetros de paginación"""
-    page: int = Field(default=1, ge=1, description="Número de página (inicia en 1)")
-    page_size: int = Field(default=10, ge=1, le=100, description="Tamaño de página (máximo 100)")
     
+    page: int = Field(default=1, ge=1, description="Number of the page to retrieve (1-based index)")
+    page_size: int = Field(default=10, ge=1, le=100, description="Page size (maximum 100)")
+
 
 class PaginationMetaDTO(BaseModel):
-    """DTO para metadatos de paginación"""
+    
     current_page: int
     page_size: int
     total_items: int
@@ -21,7 +21,7 @@ class PaginationMetaDTO(BaseModel):
 
 
 class PaginatedSkillDTO(BaseModel):
-    """DTO para skill con progreso paginado - coherente con vistas móviles"""
+    
     skill_id: str
     skill_name: str 
     skill_type: str  
@@ -46,7 +46,7 @@ class PaginatedSkillDTO(BaseModel):
 
 
 class PaginatedSkillsResponseDTO(BaseModel):
-    """DTO para respuesta paginada de skills con progreso"""
+   
     user_id: str
     skills: List[PaginatedSkillDTO]
     pagination: PaginationMetaDTO
@@ -54,7 +54,7 @@ class PaginatedSkillsResponseDTO(BaseModel):
 
 
 class PaginatedScenariosResponseDTO(BaseModel):
-    """DTO para respuesta paginada de escenarios"""
+
     skill_type: str
     scenarios: List[ScenarioDTO]
     pagination: PaginationMetaDTO

@@ -30,11 +30,11 @@ class GenerateCompletionFeedbackUseCase:
           
             session = await self.simulation_session_repository.find_by_session_id(session_id)
             if not session:
-                raise ValueError(f"Sesión {session_id} no encontrada")
+                raise ValueError(f"Session {session_id} not found")
             
             scenario = await self.scenario_repository.find_by_id(session.scenario_id)
             if not scenario:
-                raise ValueError(f"Escenario {session.scenario_id} no encontrado")
+                raise ValueError(f"Scenario {session.scenario_id} not found")
             
             steps = await self.simulation_step_repository.find_by_session_id(session_id)
             steps.sort(key=lambda x: x.step_number)
@@ -81,16 +81,16 @@ class GenerateCompletionFeedbackUseCase:
             )
             
         except Exception as e:
-            raise Exception(f"Error al generar feedback de finalización: {str(e)}")
+            raise Exception(f"Error generating completion feedback: {str(e)}")
     
     def _calculate_performance_metrics(self, session, steps) -> PerformanceMetricsDTO:
-        """Calcular métricas de rendimiento"""
+        """Calculate performance metrics"""
         completed_steps = [s for s in steps if s.content.user_response]
         
         
         scores = [s.evaluation.step_score for s in steps if s.evaluation and s.evaluation.step_score]
         average_step_score = sum(scores) / len(scores) if scores else 0
-        overall_score = min(100, average_step_score * 1.2)  # Boost por completar
+        overall_score = min(100, average_step_score * 1.2)  
         
         
         total_time = self._calculate_total_time_minutes(session, steps)
@@ -118,7 +118,7 @@ class GenerateCompletionFeedbackUseCase:
         )
     
     async def _generate_skill_assessments(self, session, steps, scenario) -> List[SkillAssessmentDTO]:
-        """Generar evaluación detallada por habilidad"""
+        """Generate detailed evaluation by skill"""
         skill_assessments = []
         
         
@@ -168,122 +168,120 @@ class GenerateCompletionFeedbackUseCase:
         return skill_assessments
     
     async def _generate_overall_feedback(self, session, steps, scenario, performance) -> str:
-        """Generar feedback general usando IA"""
+        """Generate general feedback using AI"""
         try:
         
             completed_steps = len([s for s in steps if s.content.user_response])
             user_responses = [s.content.user_response for s in steps if s.content.user_response]
             
             prompt = f"""
-            Genera un feedback motivacional y constructivo para un usuario que completó una simulación de soft skills.
+            Generate motivational and constructive feedback for a user who completed a soft skills simulation.
 
-            CONTEXTO:
-            - Habilidad practicada: {session.skill_type}
-            - Escenario: {scenario.title}
-            - Pasos completados: {completed_steps}/{session.total_steps}
-            - Puntuación general: {performance.overall_score}/100
-            - Tiempo total: {performance.total_time_minutes} minutos
-            - Nivel de confianza: {performance.confidence_level}
+            CONTEXT:
+            - Practiced skill: {session.skill_type}
+            - Scenario: {scenario.title}
+            - Steps completed: {completed_steps}/{session.total_steps}
+            - Overall score: {performance.overall_score}/100
+            - Total time: {performance.total_time_minutes} minutes
+            - Confidence level: {performance.confidence_level}
 
-            INSTRUCCIONES:
-            1. Comienza reconociendo el esfuerzo y logros del usuario
-            2. Destaca los aspectos más positivos de su desempeño
-            3. Menciona áreas de crecimiento de manera constructiva
-            4. Termina con motivación para continuar desarrollando la habilidad
-            5. Usa un tono profesional pero cálido
-            6. Máximo 200 palabras
+            INSTRUCTIONS:
+            1. Start by recognizing the user's effort and achievements
+            2. Highlight the most positive aspects of their performance
+            3. Mention areas for growth in a constructive way
+            4. End with motivation to continue developing the skill
+            5. Use a professional yet warm tone
+            6. Maximum 200 words
 
-            El feedback debe ser específico al contexto IT y soft skills profesionales.
+            The feedback should be specific to the IT context and professional soft skills.
             """
             
             feedback = await self.gemini_service.generate_content(prompt)
-            return feedback[:500]  # Limitar longitud
+            return feedback[:500]  # Limit length
             
         except Exception as e:
-            # Fallback si falla la IA
-            return self._generate_fallback_feedback(performance, session.skill_type)
+            raise Exception(f"Error generating general feedback: {str(e)}")
     
     def _identify_key_achievements(self, steps, performance) -> List[str]:
-        """Identificar logros clave basados en el desempeño"""
+        """Identify key achievements based on performance"""
         achievements = []
         
         if performance.overall_score >= 90:
-            achievements.append("🏆 Excelente desempeño - Puntuación superior al 90%")
+            achievements.append("Excellent performance - Score above 90%")
         elif performance.overall_score >= 80:
-            achievements.append("🎯 Muy buen desempeño - Puntuación superior al 80%")
+            achievements.append("Very good performance - Score above 80%")
         elif performance.overall_score >= 70:
-            achievements.append("✅ Buen desempeño - Cumpliste los objetivos básicos")
+            achievements.append("Good performance - You met the basic objectives")
         
         if performance.completion_percentage >= 100:
-            achievements.append("🚀 Completaste toda la simulación exitosamente")
+            achievements.append("You successfully completed the entire simulation")
         
         if performance.help_requests_count == 0:
-            achievements.append("💪 Resolviste todos los desafíos sin solicitar ayuda")
+            achievements.append("You solved all challenges without requesting help")
         
         if performance.average_response_time_seconds < 60:
-            achievements.append("⚡ Respuestas rápidas y decisivas")
+            achievements.append("Quick and decisive responses")
         
         if performance.confidence_level == "high":
-            achievements.append("🎪 Demostraste alta confianza en tus respuestas")
+            achievements.append("You demonstrated high confidence in your answers")
         
         return achievements[:4]  
-    
     def _extract_main_learnings(self, steps) -> List[str]:
-        """Extraer aprendizajes principales de los feedbacks"""
+        
         learnings = []
         
-        
+        # Extract key learnings
         for step in steps:
             if step.content.ai_feedback:
-                
+                # Look for important insights in feedback
                 feedback = step.content.ai_feedback.lower()
-                if "importante" in feedback or "clave" in feedback:
-                    
+                if "important" in feedback or "key" in feedback:
+                    # Extract the sentence containing the learning
                     sentences = step.content.ai_feedback.split('.')
                     for sentence in sentences:
-                        if "importante" in sentence.lower() or "clave" in sentence.lower():
+                        if "important" in sentence.lower() or "key" in sentence.lower():
                             learnings.append(sentence.strip())
                             break
         
-        
+        # Default learnings if none found
         if len(learnings) < 2:
             learnings.extend([
-                "La comunicación efectiva requiere claridad y empatía",
-                "Tomar tiempo para reflexionar mejora la calidad de las decisiones"
+                "Effective communication requires clarity and empathy",
+                "Taking time to reflect improves decision quality"
             ])
         
         return learnings[:3]  
     
     async def _generate_next_steps_recommendations(self, session, performance, skill_assessments) -> List[str]:
-        """Generar recomendaciones personalizadas"""
+        """Generate personalized recommendations"""
         recommendations = []
         
-        
+        # Score-based recommendations
         if performance.overall_score < 70:
-            recommendations.append(f"Practica más escenarios de {session.skill_type} para fortalecer las bases")
+            recommendations.append(f"Practice more {session.skill_type} scenarios to strengthen fundamentals")
         elif performance.overall_score < 85:
-            recommendations.append(f"Busca situaciones más complejas de {session.skill_type} para el siguiente nivel")
+            recommendations.append(f"Seek more complex {session.skill_type} situations for the next level")
         else:
-            recommendations.append(f"Considera convertirte en mentor en {session.skill_type}")
+            recommendations.append(f"Consider becoming a mentor in {session.skill_type}")
         
-        
+        # Skill-specific recommendations
         for assessment in skill_assessments:
             if assessment.score < 70:
-                recommendations.append(f"Enfócate en mejorar: {assessment.skill_name}")
+                recommendations.append(f"Focus on improving: {assessment.skill_name}")
         
-        
+        # Response time recommendations
         if performance.average_response_time_seconds > 120:
-            recommendations.append("Practica tomar decisiones más rápidas en situaciones similares")
+            recommendations.append("Practice making faster decisions in similar situations")
         
-       
+        # Help request recommendations
         if performance.help_requests_count > 2:
-            recommendations.append("Construye más confianza practicando escenarios similares")
+            recommendations.append("Build more confidence by practicing similar scenarios")
         
         return recommendations[:4]  
     
     
     def _calculate_total_time_minutes(self, session, steps) -> int:
-        """Calcular tiempo total en minutos"""
+        """Calculate total time in minutes"""
         if not steps:
             return 0
         
@@ -292,7 +290,7 @@ class GenerateCompletionFeedbackUseCase:
         return max(1, int((end_time - start_time).total_seconds() / 60))
     
     def _calculate_confidence_level(self, steps, avg_response_time) -> str:
-        """Calcular nivel de confianza basado en respuestas"""
+        """Calculate confidence level based on responses"""
         confidence_keywords = 0
         total_responses = 0
         
@@ -300,7 +298,7 @@ class GenerateCompletionFeedbackUseCase:
             if step.content.user_response:
                 total_responses += 1
                 response = step.content.user_response.lower()
-                if any(word in response for word in ["seguro", "confío", "definitivamente", "claramente"]):
+                if any(word in response for word in ["sure", "confident", "definitely", "clearly"]):
                     confidence_keywords += 1
         
         confidence_ratio = confidence_keywords / total_responses if total_responses > 0 else 0
@@ -313,7 +311,7 @@ class GenerateCompletionFeedbackUseCase:
             return "low"
     
     def _determine_skill_level(self, score: float) -> str:
-        """Determinar nivel de habilidad basado en puntuación"""
+        """Determine skill level based on score"""
         if score >= 85:
             return "advanced"
         elif score >= 70:
@@ -322,8 +320,8 @@ class GenerateCompletionFeedbackUseCase:
             return "beginner"
     
     def _calculate_percentile_ranking(self, score: float) -> int:
-        """Calcular percentil (simplificado)"""
-       
+        """Calculate percentile (simplified)"""
+        # Simplified percentile calculation based on score
         if score >= 90:
             return 95
         elif score >= 80:
@@ -336,7 +334,7 @@ class GenerateCompletionFeedbackUseCase:
             return 30
     
     def _check_badge_unlock(self, performance, skill_assessments) -> str:
-        """Verificar si se desbloqueó algún badge"""
+        """Check if any badge was unlocked"""
         if performance.overall_score >= 95:
             return "Expert Communicator"
         elif performance.overall_score >= 85 and performance.help_requests_count == 0:
@@ -347,36 +345,36 @@ class GenerateCompletionFeedbackUseCase:
             return None
     
     async def _generate_skill_specific_feedback(self, skill_name, score, strengths, improvements) -> str:
-        """Generar feedback específico para una habilidad"""
+        """Generate specific feedback for a skill"""
         try:
             prompt = f"""
-            Genera un feedback específico y constructivo para la habilidad de {skill_name}.
+            Generate specific and constructive feedback for the skill of {skill_name}.
 
-            DATOS:
-            - Puntuación: {score}/100
-            - Fortalezas: {', '.join(strengths) if strengths else 'No identificadas'}
-            - Áreas de mejora: {', '.join(improvements) if improvements else 'No identificadas'}
+            DATA:
+            - Score: {score}/100
+            - Strengths: {', '.join(strengths) if strengths else 'None identified'}
+            - Areas for improvement: {', '.join(improvements) if improvements else 'None identified'}
 
-            INSTRUCCIONES:
-            1. Máximo 100 palabras
-            2. Tono profesional y constructivo
-            3. Enfoque en acciones específicas para mejorar
-            4. Reconoce fortalezas identificadas
+            INSTRUCTIONS:
+            1. Maximum 100 words
+            2. Professional and constructive tone
+            3. Focus on specific actions to improve
+            4. Acknowledge identified strengths
             """
             
             feedback = await self.gemini_service.generate_content(prompt)
             return feedback[:200]
             
         except Exception:
-            return f"Tu desempeño en {skill_name} muestra potencial de crecimiento. Continúa practicando para mejorar tus habilidades."
+            return f"Your performance in {skill_name} shows growth potential. Continue practicing to improve your skills."
     
     def _generate_fallback_feedback(self, performance, skill_type) -> str:
-        """Feedback de respaldo si falla la IA"""
+        """Fallback feedback if AI fails"""
         score = performance.overall_score
         
         if score >= 80:
-            return f"¡Excelente trabajo! Has demostrado un sólido dominio de {skill_type}. Tu puntuación de {score}/100 refleja tu capacidad para manejar situaciones profesionales complejas. Continúa desarrollando estas habilidades para alcanzar un nivel de expertise."
+            return f"Excellent work! You have demonstrated solid mastery of {skill_type}. Your score of {score}/100 reflects your ability to handle complex professional situations. Continue developing these skills to reach expert level."
         elif score >= 60:
-            return f"Buen progreso en {skill_type}. Has completado la simulación con una puntuación de {score}/100, lo que indica un entendimiento sólido de los conceptos clave. Hay oportunidades para mejorar y refinar tus habilidades con más práctica."
+            return f"Good progress in {skill_type}. You completed the simulation with a score of {score}/100, indicating solid understanding of key concepts. There are opportunities to improve and refine your skills with more practice."
         else:
-            return f"Has completado la simulación de {skill_type} con dedicación. Tu puntuación de {score}/100 muestra que estás en proceso de desarrollo. Te recomendamos revisar los conceptos fundamentales y practicar más escenarios similares."
+            return f"You completed the {skill_type} simulation with dedication. Your score of {score}/100 shows you are in development process. We recommend reviewing fundamental concepts and practicing more similar scenarios."
