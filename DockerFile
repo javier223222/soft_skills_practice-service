@@ -1,23 +1,41 @@
-FROM python:3.11.9-slim
+FROM python:3.11-slim
 
-ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+# Variables de entorno
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/src
 
+# Directorio de trabajo
 WORKDIR /app
 
-# Copiar requirements primero para aprovechar cache de Docker
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar e instalar dependencias Python
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt || \
+    (grep -v "pywin32" requirements.txt > requirements-filtered.txt && \
+     pip install --no-cache-dir -r requirements-filtered.txt)
 
-# Crear y activar entorno virtual
-RUN python -m venv venv 
-RUN /bin/bash -c "source venv/bin/activate && pip install -r requirements.txt"
+# Copiar código fuente
+COPY src/ ./src/
+COPY run.py .
 
-# Copiar el resto del código
-COPY . .
+# Crear usuario no root para seguridad
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
 
-# Exponer el puerto
+# Exponer puerto
 EXPOSE 8001
 
-# ✅ Usar uvicorn directamente con host 0.0.0.0 para que sea accesible desde fuera del contenedor
-CMD ["venv/bin/python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Health check - verificar que la aplicación responde
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:8001/docs || curl -f http://localhost:8001/ || exit 1
+
+# Comando para ejecutar la aplicación
+CMD ["python", "run.py"]
