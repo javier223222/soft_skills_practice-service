@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 from ..dtos.simulation_dtos import (
     StartSimulationRequestDTO, 
    
@@ -42,14 +42,14 @@ class StartSimulationUseCase:
     
     async def _create_scenario_by_ai(self,request:StartSimulationRequestBySoftSkillDTO):
         try:
-            prompt =  prompt = f"""
+            prompt = f"""
 You are an expert in designing interactive simulations for soft skills development.
 
-Generate a realistic practice scenario that helps the user strengthen the soft skill: "{request['skill_type']}". 
+Generate a realistic practice scenario that helps the user strengthen the soft skill: "{request.skill_type}". 
 The scenario must adapt to the following user characteristics:
-- Technical specialization: "{request['tecnical_specialization']}"
-- Seniority level: "{request['seniority_level']}"
-- Desired difficulty level: {request['difficulty_preference']} (scale from 1 to 5)
+- Technical specialization: "{request.tecnical_specialization}"
+- Seniority level: "{request.seniority_level}"
+- Desired difficulty level: {request.difficulty_preference} (scale from 1 to 5)
 
 Scenario requirements:
 1. Direct relevance to the indicated soft skill.
@@ -65,7 +65,7 @@ JSON:
 {{
   "title": "Scenario title",
   "description": "General description of the scenario context",
-  "difficulty_level": {request['difficulty_preference']},
+  "difficulty_level": {request.difficulty_preference},
   "estimated_duration": "Estimated duration in minutes only a integer",
   "steps": "number of steps to follow always 5",
   "initial_situation": "Initial situation that presents the challenge or dilemma to the user",
@@ -99,10 +99,10 @@ JSON:
             return scenario
         
         except Exception as e:
-            raise Exception(f"Error al crear escenario con IA: {str(e)}")
+            raise Exception(f"Error creating AI scenario: {str(e)}")
 
     async def _get_scenario(self, scenario_id: str):
-        """Obtener escenario por ID"""
+        """Get scenario by ID"""
 
         scenario = await self.scenario_repository.find_by_id(scenario_id)
         if scenario:
@@ -112,8 +112,8 @@ JSON:
         scenario = await self.scenario_repository.find_by_scenario_id(scenario_id)
         return scenario
     
-    async def _create_simulation_session(self, request: StartSimulationRequestDTO, scenario) -> SimulationSession:
-        """Crear nueva sesión de simulación"""
+    async def _create_simulation_session(self, request: Union[StartSimulationRequestDTO, StartSimulationRequestBySoftSkillDTO], scenario) -> SimulationSession:
+        """Create new simulation session"""
         session_id = str(uuid.uuid4())
         
         
@@ -140,20 +140,23 @@ JSON:
         saved_session = await self.simulation_session_repository.create(session)
         return saved_session
     
-    async def _generate_initial_test(self, scenario,request:StartSimulationRequestDTO) -> Dict[str, Any]:
-        """Generar test inicial con IA para evaluar nivel base del usuario"""
+    async def _generate_initial_test(self, scenario, request: Union[StartSimulationRequestDTO, StartSimulationRequestBySoftSkillDTO]) -> Dict[str, Any]:
+        """Generate initial test with AI to evaluate user's base level"""
         
+        # Access attributes safely depending on the request type
+        tech_specialization = getattr(request, 'tecnical_specialization', 'Developer')
+        seniority_level = getattr(request, 'seniority_level', 'Mid')
         
-        prompt = """You are an expert in soft skills assessment. Generate an initial test to evaluate the user's baseline level in "{skill_type}" before starting the simulation.
+        prompt = f"""You are an expert in soft skills assessment. Generate an initial test to evaluate the user's baseline level in "{scenario.skill_type}" before starting the simulation.
 
 SCENARIO CONTEXT:
-- Title: {title}
-- Description: {description}
-- Initial situation: {initial_situation}
-- Difficulty level: {difficulty_level}/5
+- Title: {scenario.title}
+- Description: {scenario.description}
+- Initial situation: {scenario.initial_situation}
+- Difficulty level: {scenario.difficulty_level}/5
 
 Create an initial assessment that:
-1. Evaluates user's prior knowledge about the skill based on their technical specialization "{technical_specialization}" and seniority level "{seniority_level}"
+1. Evaluates user's prior knowledge about the skill based on their technical specialization "{tech_specialization}" and seniority level "{seniority_level}"
 2. Is relevant to the scenario context
 3. Helps personalize the simulation experience
 4. Takes 3-5 minutes to complete
@@ -163,7 +166,7 @@ Return ONLY valid JSON format:
     "question": "Main assessment question",
     "context": "Specific context for the question",
     "instructions": "Clear instructions for the user",
-    "expected_skills": ["{skill_type}"],
+    "expected_skills": ["{scenario.skill_type}"],
     "estimated_time_minutes": 4,
     "evaluation_criteria": ["criterion1", "criterion2", "criterion3"]
 }}
@@ -176,11 +179,18 @@ The question must be open-ended and allow evaluation of the user's previous expe
             
             return initial_test_data
         except Exception as e:
-           
-            raise Exception(f"Error generating initial test: {str(e)}")
+            # Fallback test if AI fails
+            return {
+                "question": f"Before starting the '{scenario.title}' scenario, tell us about your previous experience with {scenario.skill_type}. Have you faced similar situations before? How did you handle them?",
+                "context": f"We're going to work on a scenario about {scenario.skill_type}. Your response will help us personalize the experience.",
+                "instructions": "Answer honestly and in detail. There are no right or wrong answers, we just want to know your starting point.",
+                "expected_skills": [scenario.skill_type],
+                "estimated_time_minutes": 5,
+                "evaluation_criteria": ["previous_experience", "self_awareness", "reflection"]
+            }
     
     async def _create_initial_step(self, session: SimulationSession, initial_test: Dict[str, Any]) -> SimulationStep:
-        """Crear el paso inicial del test"""
+        """Create the initial test step"""
         
         step = SimulationStep(
             session_id=session.session_id,

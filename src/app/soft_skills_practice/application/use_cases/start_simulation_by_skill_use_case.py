@@ -8,18 +8,17 @@ from ..dtos.simulation_dtos import (
 
 class StartSimulationBySkillUseCase(StartSimulationUseCase):
     async def execute(self,request:StartSimulationRequestBySoftSkillDTO):
-        """Iniciar una simulación por soft skill"""
+        """Start a simulation by soft skill"""
         try:
-           
+            # Validate user_id
             if not request.user_id or request.user_id.strip() == "":
                 raise ValueError("the user_id cannot be empty")
             
-            
+            # Validate skill_type
             if not request.skill_type or request.skill_type.strip() == "":
                 raise ValueError("the skill_type cannot be empty")
 
-            
-           
+            # Create scenario with AI, session and initial test
             scenario=await self._create_scenario_by_ai(request)
             session=await self._create_simulation_session(request,scenario)
             initial_test=await self._generate_initial_test(scenario,request)
@@ -77,4 +76,4 @@ class StartSimulationBySkillUseCase(StartSimulationUseCase):
             
         
         except Exception as e:
-            raise Exception(f"Error initiating simulation by soft skill:     {str(e)}")
+            raise Exception(f"Error initiating simulation by soft skill: {str(e)}")

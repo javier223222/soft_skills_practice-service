@@ -240,15 +240,15 @@ async def get_paginated_popular_scenaries(
 async def start_softskill_simulation(request:StartSimulationRequestBySoftSkillDTO):
     try:
      if not request.user_id or request.user_id.strip() == "":
-        raise HTTPException(status_code=400, detail="El user_id no puede estar vacío")
+        raise HTTPException(status_code=400, detail="user_id cannot be empty")
      if not request.skill_type or request.skill_type.strip() == "":
-        raise HTTPException(status_code=400, detail="El skill_type no puede estar vacío")
+        raise HTTPException(status_code=400, detail="skill_type cannot be empty")
      if request.difficulty_preference and (request.difficulty_preference < 1 or request.difficulty_preference > 5):
-        raise HTTPException(status_code=400, detail="La dificultad debe estar entre 1 y 5")
+        raise HTTPException(status_code=400, detail="Difficulty must be between 1 and 5")
      if not request.tecnical_specialization or request.tecnical_specialization.strip() == "":
-        raise HTTPException(status_code=400, detail="La especialización técnica no puede estar vacía")
+        raise HTTPException(status_code=400, detail="Technical specialization cannot be empty")
      if not request.seniority_level or request.seniority_level.strip() == "":
-        raise HTTPException(status_code=400, detail="El nivel de seniority no puede estar vacío")
+        raise HTTPException(status_code=400, detail="Seniority level cannot be empty")
      
      scenario_repo = ScenarioRepository()
      simulation_session_repo = SimulationSessionRepository()
