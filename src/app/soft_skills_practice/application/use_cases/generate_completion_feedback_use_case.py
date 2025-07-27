@@ -41,26 +41,30 @@ class GenerateCompletionFeedbackUseCase:
             
             
             performance = self._calculate_performance_metrics(session, steps)
-            
+            print("check")
             
             skill_assessments = await self._generate_skill_assessments(session, steps, scenario)
-            
+            print("check2")
             
             overall_feedback = await self._generate_overall_feedback(session, steps, scenario, performance)
-            
+            print("check3")
             
             achievements = self._identify_key_achievements(steps, performance)
+            print("check4")
             learnings = self._extract_main_learnings(steps)
+            print("check5")
             
             
             recommendations = await self._generate_next_steps_recommendations(session, performance, skill_assessments)
-            
+            print("check6")
             
             percentile = self._calculate_percentile_ranking(performance.overall_score)
-            
-            
+
+            print("check7")
             certificate_earned = performance.overall_score >= 80.0
+            print("check8")
             badge_unlocked = self._check_badge_unlock(performance, skill_assessments)
+            print   ("check9")
             
             return CompletionFeedbackDTO(
                 session_id=session_id,
@@ -172,7 +176,7 @@ class GenerateCompletionFeedbackUseCase:
         try:
         
             completed_steps = len([s for s in steps if s.content.user_response])
-            user_responses = [s.content.user_response for s in steps if s.content.user_response]
+            
             
             prompt = f"""
             Generate motivational and constructive feedback for a user who completed a soft skills simulation.
@@ -191,13 +195,14 @@ class GenerateCompletionFeedbackUseCase:
             3. Mention areas for growth in a constructive way
             4. End with motivation to continue developing the skill
             5. Use a professional yet warm tone
-            6. Maximum 200 words
+            6. Maximum 100 words
 
             The feedback should be specific to the IT context and professional soft skills.
             """
             
-            feedback = await self.gemini_service.generate_content(prompt)
-            return feedback[:500]  # Limit length
+            feedback = await self.gemini_service._generate_content(prompt)
+            print(feedback)
+            return feedback.content
             
         except Exception as e:
             raise Exception(f"Error generating general feedback: {str(e)}")
@@ -362,7 +367,7 @@ class GenerateCompletionFeedbackUseCase:
             4. Acknowledge identified strengths
             """
             
-            feedback = await self.gemini_service.generate_content(prompt)
+            feedback = await self.gemini_service._generate_content(prompt)
             return feedback[:200]
             
         except Exception:

@@ -140,20 +140,7 @@ class CompletionFeedbackDTO(BaseModel, ValidationMixins):
     certificate_earned: bool = False
     badge_unlocked: Optional[str] = None
     notification_status: Optional[Dict[str, Any]] = None  
-    certificate_earned: bool = False
-    badge_unlocked: Optional[str] = None
-    
-    @validator('overall_feedback')
-    def validate_overall_feedback(cls, v):
-        if v:
-            return SanitizationUtils.sanitize_text_input(v)
-        return v
-    
-    @validator('scenario_title')
-    def validate_scenario_title(cls, v):
-        if v:
-            return SanitizationUtils.sanitize_text_input(v)
-        return v
+  
 
 
 class StartSimulationResponseDTO(BaseModel):
