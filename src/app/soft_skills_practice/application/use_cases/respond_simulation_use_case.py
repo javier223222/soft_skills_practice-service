@@ -25,7 +25,7 @@ from ...infrastructure.persistence.models.base_models import (
 from ..services.gemini_service import GeminiService
 from ..services.user_mobile_service import UserMobileService
 from .generate_completion_feedback_use_case import GenerateCompletionFeedbackUseCase
-
+from ..utils.validation_utils import ValidationUtils, SanitizationUtils, VagueResponseDetector
 
 from ...infrastructure.messaging.event_publisher import EventPublisher
 class RespondSimulationUseCase:
@@ -51,6 +51,24 @@ class RespondSimulationUseCase:
         
         try:
             print(f" Procesando respuesta de simulación para sesión {session_id}...")
+            
+            # Validate session ID format
+            if not ValidationUtils.validate_session_id(session_id):
+                raise ValueError(f"Invalid session ID format: {session_id}")
+            
+            # Validate and sanitize user response
+            if not request.user_response or not request.user_response.strip():
+                raise ValueError("User response cannot be empty")
+            
+            # Check for vague responses
+            if VagueResponseDetector.is_vague_response(request.user_response):
+                print(f"Warning: Detected potentially vague response: {request.user_response[:50]}...")
+                # Don't block the response, but log it for analysis
+            
+            # Sanitize user response while preserving intent
+            sanitized_response = SanitizationUtils.sanitize_text_input(request.user_response)
+            request.user_response = sanitized_response
+            
             session = await self._get_active_session(session_id)
             if not session:
                 raise ValueError(f"Sesión {session_id} not found or not active")

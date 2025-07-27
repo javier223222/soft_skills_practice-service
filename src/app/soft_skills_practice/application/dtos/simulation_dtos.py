@@ -1,33 +1,61 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import Optional, Dict, Any, List
 
 from datetime import datetime
+from ..utils.validation_utils import ValidationMixins, SanitizationUtils, ValidationUtils
 
-class StartSimulationRequestBaseModel(BaseModel):
+class StartSimulationRequestBaseModel(BaseModel, ValidationMixins):
     user_id: str
     tecnical_specialization: str 
     seniority_level: str
-    difficulty_preference: Optional[int] = None  
+    difficulty_preference: Optional[int] = None
+    
+    @validator('tecnical_specialization')
+    def validate_technical_specialization(cls, v):
+        if v:
+            sanitized = SanitizationUtils.sanitize_text_input(v)
+            if len(sanitized.strip()) < 3:
+                raise ValueError('Technical specialization must be at least 3 characters')
+            return sanitized[:100]  # Limit length
+        return v
+    
+    @validator('seniority_level')
+    def validate_seniority_level(cls, v):
+        if v:
+            sanitized = SanitizationUtils.sanitize_text_input(v)
+            allowed_levels = {'junior', 'mid', 'senior', 'lead', 'principal', 'architect'}
+            if sanitized.lower() not in allowed_levels:
+                # Don't raise error to maintain compatibility, just sanitize
+                pass
+            return sanitized[:50]  # Limit length
+        return v
+
 class StartSimulationRequestBySoftSkillDTO(StartSimulationRequestBaseModel):
     skill_type: str  
 
-
-
 class StartSimulationRequestDTO(StartSimulationRequestBaseModel):
     scenario_id: str
-      
-
-
-
-class RespondSimulationRequestDTO(BaseModel):
     
+    @validator('scenario_id')
+    def validate_scenario_id(cls, v):
+        if v and not ValidationUtils.validate_session_id(v):
+            # Don't raise error to maintain compatibility, just sanitize
+            return SanitizationUtils.sanitize_alphanumeric(v)
+        return v
+
+class RespondSimulationRequestDTO(BaseModel, ValidationMixins):
     user_response: str
     response_time_seconds: Optional[int] = None
     help_requested: bool = False
-
-
-class SimulationResponseDTO(BaseModel):
     
+    @validator('response_time_seconds')
+    def validate_response_time(cls, v):
+        if v is not None and (v < 0 or v > 3600):  # Max 1 hour
+            return None  # Reset to None if invalid, don't break the flow
+        return v
+
+
+class SimulationResponseDTO(BaseModel, ValidationMixins):
     session_id: str
     step_number: int
     user_response: str
@@ -36,6 +64,19 @@ class SimulationResponseDTO(BaseModel):
     next_step: Optional[Dict[str, Any]] = None
     is_completed: bool = False
     message: str
+    
+    @validator('ai_feedback')
+    def validate_ai_feedback(cls, v):
+        if v:
+            # Sanitize AI feedback to ensure it's safe
+            return SanitizationUtils.sanitize_text_input(v)
+        return v
+    
+    @validator('message')
+    def validate_message(cls, v):
+        if v:
+            return SanitizationUtils.sanitize_text_input(v)
+        return v
 
 
 class SimulationStepDTO(BaseModel):
@@ -82,37 +123,37 @@ class SkillAssessmentDTO(BaseModel):
     specific_feedback: str
 
 
-class CompletionFeedbackDTO(BaseModel):
-    
+class CompletionFeedbackDTO(BaseModel, ValidationMixins):
     session_id: str
     user_id: str
     scenario_title: str
     skill_type: str
     completion_status: str  
-    
-    
     performance: PerformanceMetricsDTO
-    
-    
     skill_assessments: List[SkillAssessmentDTO]
-    
-    
     overall_feedback: str
     key_achievements: List[str]
     main_learnings: List[str]
     next_steps_recommendations: List[str]
-    
-    
     percentile_ranking: Optional[int] = None 
-    
-    
     completed_at: datetime
     certificate_earned: bool = False
     badge_unlocked: Optional[str] = None
-    
     notification_status: Optional[Dict[str, Any]] = None  
     certificate_earned: bool = False
     badge_unlocked: Optional[str] = None
+    
+    @validator('overall_feedback')
+    def validate_overall_feedback(cls, v):
+        if v:
+            return SanitizationUtils.sanitize_text_input(v)
+        return v
+    
+    @validator('scenario_title')
+    def validate_scenario_title(cls, v):
+        if v:
+            return SanitizationUtils.sanitize_text_input(v)
+        return v
 
 
 class StartSimulationResponseDTO(BaseModel):
