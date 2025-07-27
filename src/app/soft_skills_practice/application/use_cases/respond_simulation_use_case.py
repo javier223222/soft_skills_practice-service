@@ -70,7 +70,7 @@ class RespondSimulationUseCase:
             evaluation = await self._evaluate_response(session, updated_step, scenario, request.user_response)
             
             
-            ai_feedback = await self._generate_feedback(evaluation, session, scenario)
+            ai_feedback = await self._generate_feedback(evaluation)
             
            
             await self._update_step_evaluation(updated_step, evaluation, ai_feedback)
@@ -139,9 +139,9 @@ class RespondSimulationUseCase:
         
         print(f"✅ Session found: {session_id}, status: {session.status}")
         
-        if session.status in [SimulationStatus.COMPLETED, SimulationStatus.ABANDONED]:
-            print(f"❌ Session {session_id} is not active (status: {session.status})")
-            return None
+        # if session.status in [SimulationStatus.COMPLETED, SimulationStatus.ABANDONED]:
+        #     print(f"❌ Session {session_id} is not active (status: {session.status})")
+        #     return None
         
         print(f"✅ Session {session_id} is active")
         return session

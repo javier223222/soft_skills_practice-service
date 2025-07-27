@@ -71,6 +71,7 @@ class GeminiService:
             
             response = self.model.generate_content(prompt)
             
+            
             if not response.text:
                 raise GeminiAPIException("Empty response from Gemini")
             
@@ -123,59 +124,87 @@ class GeminiService:
     def _build_evaluation_prompt(self, scenario_context: str, user_response: str, skill_type: str) -> str:
         """Construir prompt para evaluar respuestas"""
         return f"""
-    You are an expert evaluator of soft skills. Evaluate the following user response to a practice scenario.
+        You are an expert evaluator of soft skills. Evaluate the following user response to a practice scenario.
 
-    SCENARIO CONTEXT:
-    {scenario_context}
+        SCENARIO CONTEXT:
+        {scenario_context}
 
-    SKILL TO EVALUATE: {skill_type}
+        SKILL TO EVALUATE: {skill_type}
 
-    USER RESPONSE:
-    {user_response}
+        USER RESPONSE:
+        "{user_response}"
 
-    Evaluate the response considering:
-    1. Effective application of the skill "{skill_type}"
-    2. Clarity and structure of communication
-    3. Consideration of the stakeholders involved
-    4. Feasibility of the proposed solution
-    5. Professionalism and appropriate tone
+        IMPORTANT - AUTOMATIC PENALTIES FOR POOR RESPONSES:
+        - If response is too short (less than 10 words): Maximum score 20/100
+        - If response is vague/generic (like "hello", "ok", "yes", "no"): Maximum score 15/100  
+        - If response is nonsensical or random characters: Maximum score 5/100
+        - If response doesn't address the scenario: Maximum score 25/100
+        - If response is completely unrelated to the skill: Maximum score 20/100
 
-    Respond ONLY in JSON format:
-    {{
-        "overall_score": 85,
-        "criteria_scores": {{
-        "skill_application": 80,
-        "communication_clarity": 90,
-        "stakeholder_consideration": 85,
-        "solution_viability": 80,
-        "professionalism": 90
-        }},
-        "strengths": ["Strength 1", "Strength 2"],
-        "areas_for_improvement": ["Area 1", "Area 2"],
-        "specific_feedback": "Specific comments about the response"
-    }}
+        EVALUATION CRITERIA:
+        1. **Skill Application** ({skill_type}): Does the response demonstrate understanding and proper use of this specific skill?
+        2. **Communication Clarity**: Is the response clear, well-structured, and professional?
+        3. **Scenario Relevance**: Does the response directly address the situation presented?
+        4. **Solution Quality**: Are proposed actions realistic and well-thought-out?
+        5. **Professionalism**: Is the tone and language appropriate for a workplace setting?
 
-    Score: 0-100 where 100 is excellent.
-    """
+        SCORING GUIDELINES:
+        - 90-100: Exceptional response that fully demonstrates the skill with clear, actionable solutions
+        - 70-89: Good response with solid skill demonstration and clear communication
+        - 50-69: Adequate response but missing some key elements or clarity
+        - 30-49: Poor response with minimal skill demonstration or major issues
+        - 10-29: Very poor response - vague, irrelevant, or shows no understanding
+        - 0-9: Completely inappropriate, nonsensical, or no attempt to engage with the scenario
+
+        Respond ONLY in JSON format:
+        {{
+            "overall_score": 15,
+            "criteria_scores": {{
+                "skill_application": 10,
+                "communication_clarity": 15,
+                "scenario_relevance": 20,
+                "solution_quality": 10,
+                "professionalism": 20
+            }},
+            "strengths": ["Any positive aspects, even minimal"],
+            "areas_for_improvement": ["Specific areas needing work"],
+            "response_quality": "vague|appropriate|excellent",
+            "specific_feedback": "Detailed explanation of the evaluation, especially for low scores"
+        }}
+
+        Be strict with scoring. A response like "hello", "ddd", "ok" should receive very low scores (5-15/100).
+        """
 
 
     def _build_feedback_prompt(self, evaluation_result: Dict[str, Any]) -> str:
-        """Build prompt to generate feedback"""
+        """Build prompt to generate personal, concise feedback"""
+    
+        overall_score = evaluation_result.get('overall_score', 0)
+        strengths = evaluation_result.get('strengths', [])
+        areas_for_improvement = evaluation_result.get('areas_for_improvement', [])
+    
         return f"""
-    Based on this evaluation, generate constructive and motivating feedback:
+You are a mentor giving direct, personal feedback. Based on this evaluation, write a brief, conversational response as if you're speaking directly to the person.
 
-    EVALUATION:
-    {json.dumps(evaluation_result, indent=2)}
+EVALUATION RESULTS:
+- Overall Score: {overall_score}/100
+- Strengths: {', '.join(strengths) if strengths else 'None identified'}
+- Areas to improve: {', '.join(areas_for_improvement) if areas_for_improvement else 'None identified'}
 
-    Generate feedback that:
-    1. Recognizes specific strengths
-    2. Provides concrete suggestions for improvement
-    3. Is motivating and constructive
-    4. Includes specific examples when possible
-    5. Ends with a recommendation to continue practicing
+Write feedback that:
+- Uses "I" statements (I noticed, I think, I recommend)
+- Is 2-3 sentences maximum
+- Sounds like a real person talking
+- Focuses on 1-2 key points only
+- Ends with a simple, actionable suggestion
 
-    The feedback should be personalized, professional, and focused on growth.
-    """
+Examples of good feedback:
+- "I liked how you acknowledged the problem, but I think you could be more specific about next steps. Try breaking down your solution into smaller, concrete actions."
+- "I noticed you showed good empathy, though your response felt a bit rushed. Take a moment to pause and ask clarifying questions before jumping to solutions."
+- "Your communication was clear and professional! I'd love to see you push further by suggesting specific timelines or resources for your proposed solution."
+
+Keep it conversational, personal, and under 50 words.
+"""
     def _parse_scenario_response(self, response_text: str) -> Dict[str, Any]:
         """Parsear respuesta JSON del escenario"""
         try:

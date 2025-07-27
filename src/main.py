@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from app.soft_skills_practice.infrastructure.persistence.database import db_connection
 
 
+
 from app.soft_skills_practice.application.use_cases.get_paginated_user_skills_use_case import GetPaginatedUserSkillsUseCase
 from app.soft_skills_practice.application.use_cases.get_paginated_scenarios_by_skill_use_case import GetPaginatedScenariosBySkillUseCase
 

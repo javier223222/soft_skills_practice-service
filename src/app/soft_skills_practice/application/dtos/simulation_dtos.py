@@ -111,8 +111,7 @@ class CompletionFeedbackDTO(BaseModel):
     badge_unlocked: Optional[str] = None
     
     notification_status: Optional[Dict[str, Any]] = None  
-    certificate_earned: bool = False
-    badge_unlocked: Optional[str] = None
+  
 
 
 class StartSimulationResponseDTO(BaseModel):
