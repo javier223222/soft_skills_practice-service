@@ -39,7 +39,7 @@ services:
       
       
       - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./src:/app/src
     networks:
