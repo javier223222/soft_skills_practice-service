@@ -469,7 +469,12 @@ async def respond_simulation(session_id: str, request: RespondSimulationRequestD
         }
         
     except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
+        # Check if it's a session not found error
+        error_message = str(ve)
+        if "not found or not active" in error_message:
+            raise HTTPException(status_code=404, detail=f"Session not found: {error_message}")
+        else:
+            raise HTTPException(status_code=400, detail=error_message)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing simulation response: {str(e)}")
 
@@ -528,5 +533,52 @@ async def get_simulation_status(session_id: str):
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting simulation status: {str(e)}")
+
+@app.get("/debug/session/{session_id}")
+async def debug_session(session_id: str):
+    """
+    Debug endpoint to check session existence and status
+    """
+    try:
+        simulation_session_repo = SimulationSessionRepository()
+        
+        # Direct search
+        session = await simulation_session_repo.find_by_session_id(session_id)
+        
+        if not session:
+            # Check if there are any sessions at all
+            from app.soft_skills_practice.infrastructure.persistence.models.simulation_models import SimulationSession
+            total_sessions = await SimulationSession.count()
+            recent_sessions = await SimulationSession.find().sort(-SimulationSession.created_at).limit(3).to_list()
+            
+            return {
+                "found": False,
+                "session_id": session_id,
+                "total_sessions_in_db": total_sessions,
+                "recent_sessions": [
+                    {
+                        "session_id": s.session_id,
+                        "user_id": s.user_id,
+                        "status": s.status.value,
+                        "created_at": s.created_at.isoformat()
+                    } for s in recent_sessions
+                ]
+            }
+        
+        return {
+            "found": True,
+            "session_id": session.session_id,
+            "user_id": session.user_id,
+            "skill_type": session.skill_type,
+            "scenario_id": session.scenario_id,
+            "status": session.status.value,
+            "current_step": session.current_step,
+            "total_steps": session.total_steps,
+            "created_at": session.created_at.isoformat(),
+            "is_active": session.status not in ["completed", "abandoned"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error debugging session: {str(e)}")
 
 

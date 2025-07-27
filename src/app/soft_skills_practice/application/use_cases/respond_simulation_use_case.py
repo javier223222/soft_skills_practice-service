@@ -130,10 +130,20 @@ class RespondSimulationUseCase:
     
     async def _get_active_session(self, session_id: str) -> Optional[SimulationSession]:
         """Get active session by ID"""
+        print(f"🔍 Looking for session: {session_id}")
         session = await self.simulation_session_repository.find_by_session_id(session_id)
-        if not session or session.status != SimulationStatus.STARTED or session.status != SimulationStatus.SIMULATION or session.status != SimulationStatus.PRE_TEST or session.status == SimulationStatus.COMPLETED or session.status == SimulationStatus.ABANDONED:
+        
+        if not session:
+            print(f"❌ Session {session_id} not found in database")
             return None
         
+        print(f"✅ Session found: {session_id}, status: {session.status}")
+        
+        if session.status in [SimulationStatus.COMPLETED, SimulationStatus.ABANDONED]:
+            print(f"❌ Session {session_id} is not active (status: {session.status})")
+            return None
+        
+        print(f"✅ Session {session_id} is active")
         return session
         
     
