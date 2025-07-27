@@ -139,9 +139,9 @@ class RespondSimulationUseCase:
         
         print(f"✅ Session found: {session_id}, status: {session.status}")
         
-        # if session.status in [SimulationStatus.COMPLETED, SimulationStatus.ABANDONED]:
-        #     print(f"❌ Session {session_id} is not active (status: {session.status})")
-        #     return None
+        if session.status in [SimulationStatus.COMPLETED, SimulationStatus.ABANDONED]:
+            print(f"❌ Session {session_id} is not active (status: {session.status})")
+            return None
         
         print(f"✅ Session {session_id} is active")
         return session
