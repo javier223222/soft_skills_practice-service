@@ -26,6 +26,7 @@ from app.soft_skills_practice.application.dtos.simulation_dtos import (
     StartSimulationRequestBySoftSkillDTO,
     StartSimulationRequestBaseModel
 )
+from app.soft_skills_practice.infrastructure.web.assessment_endpoints import assessment_router
 from app.soft_skills_practice.infrastructure.messaging.rabbitmq_producer import rabbitmq_producer
 from app.soft_skills_practice.infrastructure.messaging.event_publisher import EventPublisher
 
@@ -74,6 +75,8 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+app.include_router(assessment_router)
 
 @app.get("/")
 async def health_check():
