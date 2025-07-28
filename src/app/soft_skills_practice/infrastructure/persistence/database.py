@@ -8,6 +8,10 @@ from .models.simulation_models import (
     Scenario,
     SkillCatalog
 )
+from .models.assessment_models import (
+    AssessmentQuestion,
+    InitialAssessment
+)
 import logging
 
 class DatabaseConnection:
@@ -30,7 +34,9 @@ class DatabaseConnection:
                     SimulationStep,
                     UserRecommendations,
                     Scenario,
-                    SkillCatalog
+                    SkillCatalog,
+                    AssessmentQuestion,
+                    InitialAssessment
                 ]
             )
             

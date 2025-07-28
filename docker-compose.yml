@@ -28,7 +28,7 @@ services:
       - NOTIFICATIONS_QUEUE_NAME=${NOTIFICATIONS_QUEUE_NAME}
       - PROFILE_QUEUE_NAME=${PROFILE_QUEUE_NAME}
       - POINTS_QUEUE_NAME=${POINTS_QUEUE_NAME}
-      - ACHIEVEMENTS_QUEUE_NAME=${ACHIEVEMENTS_QUEUE_NAME}
+      
       
   
       - APP_NAME=${APP_NAME}
@@ -38,7 +38,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       
       
-      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      
     restart: always
     volumes:
       - ./src:/app/src

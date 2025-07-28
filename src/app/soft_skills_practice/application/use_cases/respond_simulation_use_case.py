@@ -25,7 +25,7 @@ from ...infrastructure.persistence.models.base_models import (
 from ..services.gemini_service import GeminiService
 from ..services.user_mobile_service import UserMobileService
 from .generate_completion_feedback_use_case import GenerateCompletionFeedbackUseCase
-
+from ..utils.validation_utils import ValidationUtils, SanitizationUtils, VagueResponseDetector
 
 from ...infrastructure.messaging.event_publisher import EventPublisher
 class RespondSimulationUseCase:
@@ -70,7 +70,7 @@ class RespondSimulationUseCase:
             evaluation = await self._evaluate_response(session, updated_step, scenario, request.user_response)
             
             
-            ai_feedback = await self._generate_feedback(evaluation)
+            ai_feedback = await self._generate_feedback(evaluation, session, scenario)
             
            
             await self._update_step_evaluation(updated_step, evaluation, ai_feedback)
@@ -243,13 +243,21 @@ Respond ONLY in JSON format:
 
            raise Exception(f"Error generating evaluation content: {str(e)}")
 
-    async def _generate_feedback(self, evaluation: Dict[str, Any]) -> str:
+    async def _generate_feedback(self, evaluation: Dict[str, Any], session=None, scenario=None) -> str:
         """Generate personalized feedback with AI"""
         try:
-            feedback = await self.gemini_service.generate_feedback(evaluation)
-            return feedback
-        except Exception as e:
+            # Enhanced feedback with validation context
+            if VagueResponseDetector.is_vague_response(evaluation.get("user_response", "")):
+                # Add context about response quality
+                evaluation["response_quality_note"] = "Consider providing more detailed responses"
             
+            feedback = await self.gemini_service.generate_feedback(evaluation, session, scenario)
+            
+            # Sanitize AI-generated feedback
+            return SanitizationUtils.sanitize_text_input(feedback)
+        except Exception as e:
+            print(f"⚠️ Fallback: Using default feedback due to error: {e}")
+            # Enhanced fallback feedback
             score = evaluation.get("overall_score", 75)
             if score >= 80:
                 return "Excellent answer! You demonstrate a good understanding of the situation. Continue to the next step."
